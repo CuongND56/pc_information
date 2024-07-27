@@ -78,13 +78,13 @@ int ili9341_software_reset(struct ili9341_device *dev_data) {
     return status;
 }
 
-int ili9341_send_command(struct device_data *dev_data, u8 *buff, size_t len) {
+int ili9341_send_command(struct ili9341_device *dev_data, u8 *buff, size_t len) {
 
-    gpiod_set_value(dev_data->dc_gpio, ILI9341_DC_COMMAND);
+    gpio_set_value(dev_data->dc_gpio, ILI9341_DC_COMMAND);
     return spi_write(dev_data->client, buff, len);
 }
 
-int ili9341_send_command_with_args(struct device_data *dev_data, u8 cmd, u8 *args, size_t args_len) {
+int ili9341_send_command_with_args(struct ili9341_device *dev_data, u8 cmd, u8 *args, size_t args_len) {
 
     int status;
     status = ili9341_send_command(dev_data, &cmd, 1);
@@ -94,13 +94,54 @@ int ili9341_send_command_with_args(struct device_data *dev_data, u8 cmd, u8 *arg
     return status;
 }
 
-int ili9341_send_data(struct device_data *dev_data, u8 *buff, size_t len) {
+int ili9341_send_data(struct ili9341_device *dev_data, u8 *buff, size_t len) {
 
-    gpiod_set_value(dev_data->dc_gpio, ILI9341_DC_DATA);
+    gpio_set_value(dev_data->dc_gpio, ILI9341_DC_DATA);
     return spi_write(dev_data->client, buff, len);
 }
 
+int ili9341_send_one(struct ili9341_device *dev_data, unsigned char c) {
 
+    gpio_set_value(dev_data->dc_gpio, ILI9341_DC_DATA);
+    return spi_write(dev_data->client, c, 1);
+}
+
+void setAddrWindow(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1) {
+
+	ili9341_send_command(dev_data, ILI9341_CASET);
+	ili9341_send_one(dev_data, x0 >> 8);
+	ili9341_send_one(dev_data, x0 & 0xFF);
+	ili9341_send_one(dev_data, x1 >> 8);
+	ili9341_send_one(dev_data, x1 & 0xFF);
+
+	ili9341_send_command(dev_data, ILI9341_PASET);
+	ili9341_send_one(dev_data, y0 >> 8);
+	ili9341_send_one(dev_data, y0);
+	ili9341_send_one(dev_data, y1 >> 8);
+	ili9341_send_one(dev_data, y1);
+
+	ili9341_send_command(dev_data, ILI9341_RAMWR);
+}
+
+void drawPixel(struct ili9341_device *dev_data, int x, int y, int color) {
+
+	if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
+		return;
+	setAddrWindow(dev_data, x, y, x + 1, y + 1);
+	ili9341_send_one(dev_data, color >> 8);
+	ili9341_send_one(dev_data, color);
+}
+
+void fillScreen(struct ili9341_device *dev_data, int color) {
+
+	int x, y;
+
+	for (x = 0; x < ILI9341_WIDTH; x++) {
+		for (y = 0; y < ILI9341_HEIGHT; y++) {
+			drawPixel(dev,x, y, color);
+		}
+	}
+}
 
 
 
