@@ -76,12 +76,10 @@ int ili9341_software_reset(struct ili9341_device *dev_data) {
     int status = 0;
     uint8_t reset_cmd = ILI9341_SWRESET;
 
-	spi_common_select(&dev_data->spi_dev);
     status = spi_common_send_command(&dev_data->spi_dev, &reset_cmd, 1);
     if (status)
         return status;
     mdelay(150);
-	spi_common_unselect(&dev_data->spi_dev);
     return status;
 }
 
