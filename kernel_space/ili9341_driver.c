@@ -4,7 +4,6 @@
 #define VERSION     "1.0"
 #define DESCRIPTION "Bring up ILI9341"
 
-#define DC_GPIO 31
 
 static int __init initialize(void);
 static void __exit deinitialize(void);
@@ -13,10 +12,10 @@ static void __exit deinitialize(void);
 static int ili9341_probe(struct spi_device *client);
 static int ili9341_remove(struct spi_device *client);
 
-static ssize_t m_read (struct file *mf, char __user *user_buffer, size_t length, loff_t *offset);
-static ssize_t m_write (struct file *mf, const char __user *user_buffer, size_t length, loff_t *offset);
-static int m_open (struct inode *mInode, struct file *mf);
-static int m_release (struct inode *mInode, struct file *mf);
+static ssize_t m_read(struct file *mf, char __user *user_buffer, size_t length, loff_t *offset);
+static ssize_t m_write(struct file *mf, const char __user *user_buffer, size_t length, loff_t *offset);
+static int m_open(struct inode *mInode, struct file *mf);
+static int m_release(struct inode *mInode, struct file *mf);
 
 
 struct ILI9341_Driver_t {
@@ -25,30 +24,29 @@ struct ILI9341_Driver_t {
     struct cdev m_cdev;
     struct ili9341_device *device;
     int size;
-}
+};
 
 static struct ILI9341_Driver_t ili9341_t;
 
-static struct of_device_id ili9341_device_ids[] = {
-    { .compatible = "of,ili9341" },
+static struct of_device_id ili9341_of_match[] = {
+    { .compatible = "tft-c,ili9341-c" },
     { /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, ili9341_device_ids);
+MODULE_DEVICE_TABLE(of, ili9341_of_match);
 
-// static struct spi_device_id ili9341_spi_device_ids[] = {
-// 	{"ili9341_device", 0},
-// 	{ /* sentinel */ },
-// };
-// MODULE_DEVICE_TABLE(spi, ili9341_spi_device_ids);
+static struct spi_device_id ili9341_id[] = {
+	{"ili9341-c", 0},
+	{ /* sentinel */ },
+};
+MODULE_DEVICE_TABLE(spi, ili9341_id);
 
 static struct spi_driver ili9341_driver = {
 	.probe = ili9341_probe,
 	.remove = ili9341_remove,
-	// .id_table = ili9341_spi_device_ids,
+	.id_table = ili9341_id,
 	.driver = {
 		.name = "ili9341_screen",
-		.of_match_table = ili9341_device_ids,
-        .owner = THIS_MODULE,
+		.of_match_table = ili9341_of_match,
 	},
 };
 
@@ -68,7 +66,7 @@ static int __init initialize(void) {
     pr_info("Initializing...\n");
     pr_info("Major : %d    Minor : %d\n", MAJOR(ili9341_t.dev_num), MINOR(ili9341_t.dev_num));
     
-    if ((mdev.m_class = class_create(THIS_MODULE, "ili9341_class")) == NULL){
+    if ((ili9341_t.m_class = class_create(THIS_MODULE, "ili9341_class")) == NULL){
         pr_err("ERROR: Can not create class ili9341\n");
         goto rm_dev_num;
     }
@@ -94,15 +92,20 @@ static int __init initialize(void) {
         goto rm_cdev_add;
     }
     pr_info("Initialize: register spi driver\n");
+    ili9341_init(ili9341_t.device);
+    fillScreen(ili9341_t.device, ILI9341_PINK);
+    pr_info("Initialize: ili9341 init\n"); 
+    char test[] = "Hello Cuong\n";
+    drawText(ili9341_t.device, test, 0, 0, ILI9341_PINK, 20, ILI9341_WHITE);
     
     return 0;
 
 rm_cdev_add:
-    cdev_del(&ili9341_t->m_cdev);
+    cdev_del(&ili9341_t.m_cdev);
 rm_class:
-    class_destroy(ili9341_t->m_class);
+    class_destroy(ili9341_t.m_class);
 rm_dev_num:
-    unregister_chrdev_region(ili9341_t->dev_num, 1);
+    unregister_chrdev_region(ili9341_t.dev_num, 1);
 
     return -1;
 }
@@ -111,34 +114,104 @@ static void __exit deinitialize(void) {
 
     pr_info("Deinitialize: Start...\n");
     spi_unregister_driver(&ili9341_driver);
-    cdev_del(&ili9341_t->m_cdev);
-    class_destroy(ili9341_t->m_class);
-    unregister_chrdev_region(ili9341_t->dev_num, 1);
+    cdev_del(&ili9341_t.m_cdev);
+    class_destroy(ili9341_t.m_class);
+    unregister_chrdev_region(ili9341_t.dev_num, 1);
 }
 
 static int ili9341_probe(struct spi_device *client) {
 
-    pr_info("PROBE...\n")
-    ili9341_t->device = kmalloc(sizeof(struct ili9341_device), GFP_KERNEL);
-    if (ili9341->device == NULL) {
-        pr_err("kmalloc failed\n");
+    int status = -1;
+    struct device *dev = &client->dev;
+
+    pr_info("PROBE...\n");
+    if (dev != NULL && dev->init_name != NULL) {
+        pr_info("%s, %d, device name: %s", __func__, __LINE__, dev->init_name);
     }
-    ili9341_t->device->client = client;
-    ili9341_t->device->dc_gpio = DC_GPIO;
 
-    gpio_request(DC_GPIO, "gpio0_30");
-    gpio_direction_output(DC_GPIO, LOW);
+    ili9341_t.device = kmalloc(sizeof(struct ili9341_device), GFP_KERNEL);
+    if (ili9341_t.device == NULL) {
+        pr_err("kmalloc failed\n");
+        return -1;
+    }
 
-    ili9341_init(ili9341_t->device);
-    fillScreen(ili9341_t->device, ILI9341_PINK);
+    ili9341_t.device->client = client;
+
+    ili9341_t.device->rs_gpio =  gpiod_get(dev, "rs", GPIOD_OUT_HIGH);
+    ili9341_t.device->dc_gpio =  gpiod_get(dev, "dc", GPIOD_OUT_HIGH);
+    ili9341_t.device->cs_gpio =  gpiod_get(dev, "chs", GPIOD_OUT_LOW);
+
+    ili9341_init(ili9341_t.device);
+    fillScreen(ili9341_t.device, ILI9341_GREENYELLOW);
+    pr_info("Initialize: ili9341 init 2\n"); 
+    // char test[] = "Hello Cuong\n";
+    // drawText(ili9341_t.device, test, 0, 0, ILI9341_PINK, 20, ILI9341_WHITE);
+    
+    return 0;
+
 }
 
 static int ili9341_remove(struct spi_device *client) {
 
-    gpio_free(DC_GPIO);
+    pr_info("Remove: Start...\n");
+    if (ili9341_t.device != NULL) {
+        gpiod_put(ili9341_t.device->rs_gpio);
+        gpiod_put(ili9341_t.device->dc_gpio);
+        gpiod_put(ili9341_t.device->cs_gpio);
+        kfree(ili9341_t.device);
+    }
+    // gpio_free(DC_GPIO);
+    // spi_unregister_driver(&ili9341_driver);
+    // cdev_del(&ili9341_t.m_cdev);
+    // class_destroy(ili9341_t.m_class);
+    // unregister_chrdev_region(ili9341_t.dev_num, 1);
+
+    return 0;
 }
 
+static ssize_t m_read (struct file *mf, char __user *user_buffer, size_t length, loff_t *offset) {
 
+    pr_info("Read system call\n");
+    return length;
+}
+
+static ssize_t m_write (struct file *mf, const char __user *user_buffer, size_t length, loff_t *offset) {
+
+    pr_info("Write system call\n");
+    return length;
+}
+
+static int m_open (struct inode *mInode, struct file *mf) {
+    
+    pr_info("Open system call\n");
+    return 0;
+}
+
+static int m_release (struct inode *mInode, struct file *mf) {
+    pr_info("Release system call\n");
+    return 0;
+}
+
+unsigned long __stack_chk_guard;
+void __stack_chk_guard_setup(void)
+{
+     __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
+}
+
+void __stack_chk_fail(void)                         
+{
+ /* Error message */                                 
+}// will be called when guard variable is corrupted 
+
+// module_init(initialize);
+// module_exit(deinitialize);
+
+module_spi_driver(ili9341_driver);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR(AUTHOR);
+MODULE_DESCRIPTION(DESCRIPTION);
+MODULE_VERSION(VERSION);
 
 
 

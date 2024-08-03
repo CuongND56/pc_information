@@ -173,40 +173,57 @@
 		"NC";
 };
 
+
+&ocp{
+	P9_11_pinmux { status = "disabled"; };
+	P9_13_pinmux { status = "disabled"; };
+	P9_15_pinmux { status = "disabled"; };
+	P9_17_pinmux { status = "disabled"; };
+	P9_18_pinmux { status = "disabled"; };
+	P9_21_pinmux { status = "disabled"; };
+	P9_22_pinmux { status = "disabled"; };
+	// P9_24_pinmux { status = "disabled"; };
+	// P9_26_pinmux { status = "disabled"; };
+};
+
 &am33xx_pinmux {
 	display_pins: display_pins{
 		pinctrl-single,pins = <
-		    AM33XX_PADCONF(0x950, PIN_INPUT, MUX_MODE0)					/* SPI0_SCLK */ 
-			AM33XX_PADCONF(0x954, PIN_INPUT, MUX_MODE0)					/* SPI0_D0 */
-			AM33XX_PADCONF(0x958, PIN_OUTPUT_PULLUP, MUX_MODE0)					/* SPI0_D1 */
-			AM33XX_PADCONF(0x95c, PIN_OUTPUT_PULLUP, MUX_MODE0)			/* SPI0_CS0 */
+		    AM33XX_PADCONF(0x950, PIN_OUTPUT_PULLUP, MUX_MODE0)					/* P9_22 SPI0_SCLK */ 
+			AM33XX_PADCONF(0x954, PIN_INPUT_PULLUP, MUX_MODE0)					/* P9_21 SPI0_D0 */
+			AM33XX_PADCONF(0x958, PIN_OUTPUT_PULLUP, MUX_MODE0)					/* P9_18 SPI0_D1 */
+			// AM33XX_PADCONF(0x95c, PIN_OUTPUT_PULLDOWN, MUX_MODE0)			/* P9_17 SPI0_CS0 */
 
-			// AM33XX_PADCONF(0x878, PIN_OUTPUT_PULLUP, MUX_MODE7)
-			AM33XX_PADCONF(0x874, PIN_OUTPUT_PULLUP, MUX_MODE7)
+			AM33XX_PADCONF(0x870, PIN_OUTPUT_PULLUP, MUX_MODE7)					/* P9_11 RS */
+			AM33XX_PADCONF(0x874, PIN_OUTPUT_PULLUP, MUX_MODE7)					/* P9_13 DC */
+			AM33XX_PADCONF(0x840, PIN_OUTPUT_PULLDOWN, MUX_MODE7)				/* P9_15 CS */
 		>;
 	};
 };
 
 &spi0 {
 	status = "okay";
+	// cs-gpios = <&gpio0 5 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 
 	ili9341_display: ili9341_display@0 {
-		compatible = "tft,ili9341";
-		reg = <0>;
+
+		status = "okay";
+		compatible = "tft-c,ili9341-c";
 		pinctrl-names = "default";
 		pinctrl-0 = <&display_pins>;
+		reg = <0>;
 
-		spi-max-frequency = <20000000>;
+		spi-max-frequency = <4000000>;
 		width = <320>;
 		height = <240>;
 		regwidth = <8>;
 		buswidth = <8>;
 		rotate = <180>;
-		fps = <30>;
-		// led-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
-		// reset-gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
-		dc-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		// fps = <30>;
+		rs-gpios = <&gpio0 30 0>;
+		dc-gpios = <&gpio0 31 0>;
+		chs-gpios = <&gpio1 16 0>;
 	};
 };
