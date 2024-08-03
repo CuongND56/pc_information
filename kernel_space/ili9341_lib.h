@@ -41,34 +41,17 @@
 #define ILI9341_GREENYELLOW	0xAFE5
 #define ILI9341_PINK		0xF81F
 
-#define LOW                 0
-#define HIGH                1
-
 struct ili9341_device {
-    struct spi_device *client;
-    struct gpio_desc *dc_gpio;
-    struct gpio_desc *rs_gpio;
-    struct gpio_desc *cs_gpio;
+	struct spi_common spi_dev;
     u8 *display_buff;
-};
-
-struct ili9341_cmd_list_data {
-	u8 cmd;
-	u8 length_data;
-	u8 data[20];
 };
 
 int ili9341_init(struct ili9341_device *dev_data);
 int ili9341_send_display_buff(struct ili9341_device *dev_data);
 int ili9341_display_on(struct ili9341_device *dev_data);
 int ili9341_software_reset(struct ili9341_device *dev_data);
-int ili9341_send_command(struct ili9341_device *dev_data, u8 *buff, size_t len);
-int ili9341_send_command_with_args(struct ili9341_device *dev_data, u8 cmd, u8 *args, size_t args_len);
-int ili9341_send_data(struct ili9341_device *dev_data, u8 *buff, size_t len);
 void fillScreen(struct ili9341_device *dev_data, int color);
-int ili9341_send_one_data(struct ili9341_device *dev_data, unsigned char c);
 void ili9341_hardware_reset(struct ili9341_device *dev_data);
-int ili9341_send_one_command(struct ili9341_device *dev_data, u8 cmd);
 void drawChar(struct ili9341_device *dev_data, char c, int x, int y, int color, int size, int bgcolor);
 void drawRect(struct ili9341_device *dev_data, int x, int y, int w, int h, int color);
 void drawFastVLine(struct ili9341_device *dev_data, int x, int y, int h, int color);
@@ -77,9 +60,6 @@ void drawFastVLine(struct ili9341_device *dev_data, int x, int y, int h, int col
 void drawFastHLine(struct ili9341_device *dev_data, int x, int y, int w, int color);
 void drawLine(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1, int color);
 void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, int color, int size, int bgcolor);
-void ili9341_select(struct ili9341_device *dev_data);
-void ili9341_unselect(struct ili9341_device *dev_data);
-
 
 #define CHAR_WIDTH 6
 #define CHAR_HEIGHT 8

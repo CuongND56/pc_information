@@ -135,29 +135,26 @@ static int ili9341_probe(struct spi_device *client) {
         return -1;
     }
 
-    ili9341_t.device->client = client;
+    ili9341_t.device->spi_dev.client = client;
 
-    ili9341_t.device->rs_gpio =  gpiod_get(dev, "rs", GPIOD_OUT_HIGH);
-    ili9341_t.device->dc_gpio =  gpiod_get(dev, "dc", GPIOD_OUT_HIGH);
-    ili9341_t.device->cs_gpio =  gpiod_get(dev, "chs", GPIOD_OUT_LOW);
+    ili9341_t.device->spi_dev.rs_gpio =  gpiod_get(dev, "rs", GPIOD_OUT_HIGH);
+    ili9341_t.device->spi_dev.dc_gpio =  gpiod_get(dev, "dc", GPIOD_OUT_HIGH);
+    ili9341_t.device->spi_dev.cs_gpio =  gpiod_get(dev, "chs", GPIOD_OUT_LOW);
 
     ili9341_init(ili9341_t.device);
     fillScreen(ili9341_t.device, ILI9341_GREENYELLOW);
-    pr_info("Initialize: ili9341 init 2\n"); 
-    // char test[] = "Hello Cuong\n";
-    // drawText(ili9341_t.device, test, 0, 0, ILI9341_PINK, 20, ILI9341_WHITE);
+    pr_info("Initialize: ili9341 init 3\n"); 
     
     return 0;
-
 }
 
 static int ili9341_remove(struct spi_device *client) {
 
     pr_info("Remove: Start...\n");
     if (ili9341_t.device != NULL) {
-        gpiod_put(ili9341_t.device->rs_gpio);
-        gpiod_put(ili9341_t.device->dc_gpio);
-        gpiod_put(ili9341_t.device->cs_gpio);
+        gpiod_put(ili9341_t.device->spi_dev.rs_gpio);
+        gpiod_put(ili9341_t.device->spi_dev.dc_gpio);
+        gpiod_put(ili9341_t.device->spi_dev.cs_gpio);
         kfree(ili9341_t.device);
     }
     // gpio_free(DC_GPIO);
