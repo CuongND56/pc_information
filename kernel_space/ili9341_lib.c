@@ -2,31 +2,6 @@
 
 #define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
 
-static struct spi_cmd_list_data init_cmd_list_data_t[] = {
-	{ 0xCB, 5, { 0x39, 0x2C, 0x00, 0x34, 0x02 } },
-	{ 0xCF, 3, { 0x00, 0xC1, 0x30 } },
-	{ 0xE8, 3, { 0x85, 0x00, 0x78 } },
-	{ 0xEA, 2, { 0x00, 0x00 } },
-	{ 0xED, 4, { 0x64, 0x03, 0x12, 0x81 } },
-	{ 0xF7, 1, { 0x20 } },
-	{ ILI9341_PWCTR1, 1, { 0x23 } },
-	{ ILI9341_PWCTR2, 1, { 0x10 } },
-	{ ILI9341_VMCTR1, 2, { 0x3E, 0x28 } },
-	{ ILI9341_VMCTR2, 1, { 0x86 } },
-	{ ILI9341_MADCTL, 1, { 0x48 } },
-	{ ILI9341_PIXFMT, 1, { 0x55 } },
-	{ ILI9341_FRMCTR1, 2, { 0x00, 0x18 } },
-	{ ILI9341_DFUNCTR, 3, { 0x08, 0x82, 0x27 } },
-	{ 0xF2, 1, { 0x00 } },
-	{ ILI9341_GAMMASET, 1, { 0x01 } },
-	{ ILI9341_GMCTRP1, 15, { 0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00 } },
-	{ ILI9341_GMCTRN1, 15, { 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F } },
-	{ ILI9341_SLPOUT, 0, { } },
-	{ ILI9341_DISPON, 0, { } },
-	{ ILI9341_MADCTL, 1, { ILI9341_ROTATION } },
-	{ 0x00, 0, { }}
-};
-
 int ili9341_init(struct ili9341_device *dev_data) {
 
     int status;
@@ -47,7 +22,7 @@ int ili9341_init(struct ili9341_device *dev_data) {
 
 int ili9341_send_display_buff(struct ili9341_device *dev_data) {
 
-	struct spi_cmd_list_data list[] = { {0x2C, 1, { ILI9341_BUFFER_SIZE }}, { 0x00, 0, { }} };
+	struct spi_cmd_list_data list[] = { {0x2C, 1, { ILI9341_BUFFER_SIZE }}, END_OF_TABLE };
     return spi_common_send_command_with_args(&dev_data->spi_dev, list, 0);
 }
 
@@ -89,8 +64,8 @@ void ili9341_hardware_reset(struct ili9341_device *dev_data) {
 
 void setAddrWindow(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1) {
 
-	struct spi_cmd_list_data x_list[] = { {ILI9341_CASET, 4, { (x0 >> 8) & 0xFF, x0 & 0xFF, (x1 >> 8) & 0xFF, x1 & 0xFF }}, { 0x00, 0, { }} };
-	struct spi_cmd_list_data y_list[] = { {ILI9341_PASET, 4, { (y0 >> 8) & 0xFF, y0 & 0xFF, (y1 >> 8) & 0xFF, y1 & 0xFF }}, { 0x00, 0, { }} };
+	struct spi_cmd_list_data x_list[] = { {ILI9341_CASET, 4, { (x0 >> 8) & 0xFF, x0 & 0xFF, (x1 >> 8) & 0xFF, x1 & 0xFF }}, END_OF_TABLE };
+	struct spi_cmd_list_data y_list[] = { {ILI9341_PASET, 4, { (y0 >> 8) & 0xFF, y0 & 0xFF, (y1 >> 8) & 0xFF, y1 & 0xFF }}, END_OF_TABLE };
 
 	spi_common_send_command_with_args(&dev_data->spi_dev, x_list, 0);
 	spi_common_send_command_with_args(&dev_data->spi_dev, y_list, 0);

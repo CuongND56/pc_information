@@ -24,6 +24,8 @@
 #define SPI_COMMON_DC_DATA      1
 #define SPI_COMMON_DC_COMMAND   0
 
+#define END_OF_TABLE    { 0x00, 0, { } }
+
 struct spi_cmd_list_data {
 	u8 cmd;
 	u8 length_data;
