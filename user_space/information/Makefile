@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-CC = gcc
+CC = /home/cuong/Desktop/kernel_build/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
 NAME = cpu_usage
 CUR_DIR = .
 BUILD_DIR = $(CUR_DIR)/build
@@ -11,11 +11,11 @@ OBJS = $(addprefix $(BUILD_DIR)/, $(SRCS:.c=.o))
 
 all: $(NAME)
 
-$(NAME): $(OBJS)
+$(NAME): $(BUILD_DIR) $(OBJS)
 	$(CC) $(OBJS) -o $(NAME) $(INCS)
 
-# $(BUILD_DIR):
-# 	mkdir -p $@	
+$(BUILD_DIR):
+	mkdir -p $@	
 
 $(BUILD_DIR)/%.o: %.c 
 	$(CC) -c -o $@ $< $(INCS)

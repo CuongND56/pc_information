@@ -1,18 +1,17 @@
 
 #include "info_cpu.h"
 #include "info_mem.h"
-
-// usleep
-#define _BSD_SOURCE
-// #define _DEFAULT_SOURCE
-
 #include <unistd.h>         // usleep
-
 #include <stdio.h>          // snprintf, printf
+#include <pthread.h>
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 
-int main()
-{
+
+int main() {
+
     proc_stat_t stat = { 0 };
     proc_stat_t prev_stat = { 0 };
 

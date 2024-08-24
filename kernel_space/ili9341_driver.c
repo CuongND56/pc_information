@@ -157,12 +157,6 @@ static int ili9341_remove(struct spi_device *client) {
         gpiod_put(ili9341_t.device->spi_dev.cs_gpio);
         kfree(ili9341_t.device);
     }
-    // gpio_free(DC_GPIO);
-    // spi_unregister_driver(&ili9341_driver);
-    // cdev_del(&ili9341_t.m_cdev);
-    // class_destroy(ili9341_t.m_class);
-    // unregister_chrdev_region(ili9341_t.dev_num, 1);
-
     return 0;
 }
 
@@ -200,8 +194,6 @@ void __stack_chk_fail(void)
  /* Error message */                                 
 }// will be called when guard variable is corrupted 
 
-// module_init(initialize);
-// module_exit(deinitialize);
 
 module_spi_driver(ili9341_driver);
 

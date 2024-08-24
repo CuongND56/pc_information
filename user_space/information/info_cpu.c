@@ -15,8 +15,7 @@
 #include <stdio.h>          // getline
 
 
-int proc_stat_init( proc_stat_t* stat )
-{
+int proc_stat_init(proc_stat_t* stat ) {
     *stat = (proc_stat_t){ 0 };
     return 0;
 }
