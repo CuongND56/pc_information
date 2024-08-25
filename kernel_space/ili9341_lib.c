@@ -27,6 +27,8 @@ static struct spi_cmd_list_data init_cmd_list_data_t[] = {
 	END_OF_TABLE
 };
 
+static uint16_t rainbow(uint16_t value);
+
 int ili9341_init(struct ili9341_device *dev_data) {
 
     int status;
@@ -214,8 +216,242 @@ void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, i
 	}
 }
 
+int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme) {
+	
+	// Minimum value of r is about 52 before value text intrudes on ring
+	// drawing the text first is an option
+	x += r;
+	y += r;										   // Calculate coords of centre of ring
+												   //  int w = r / 8;    // Width of outer ring is 1/4 of radius
+	int angle = 150;							   // Half the sweep angle of meter (300 degrees)
+												   //  int text_colour = 0; // To hold the text colour
+	int v = map(value, vmin, vmax, -angle, angle); // Map the value to an angle v
+	uint16_t seg = 5;							   // Segments are 5 degrees wide = 60 segments for 300 degrees
+	uint16_t inc = 5;							   // Draw segments every 5 degrees, increase to 10 for segmented ring
+
+	// Draw colour blocks every inc degrees
+	for (int i = -angle; i < angle; i += inc) {
+		// Choose colour from scheme
+		int colour = 0;
+		switch (scheme) {
+			case 0:
+				colour = RED;
+				break; // Fixed colour
+			case 1:
+				colour = GREEN;
+				break; // Fixed colour
+			case 2:
+				colour = BLUE;
+				break; // Fixed colour
+			case 3:
+				colour = rainbow(map(i, -angle, angle, 0, 127));
+				break; // Full spectrum blue to red
+			case 4:
+				colour = rainbow(map(i, -angle, angle, 63, 127));
+				break; // Green to red (high temperature etc)
+			case 5:
+				colour = rainbow(map(i, -angle, angle, 127, 63));
+				break; // Red to green (low battery etc)
+			case 6:
+				colour = BLACK;
+				break;
+			case 7:
+				colour = PINK;
+				break;
+			default:
+				colour = BLUE;
+				break; // Fixed colour
+		}
+
+		// Calculate pair of coordinates for segment start
+		float sx = cos((i - 90) * 0.0174532925);
+		float sy = sin((i - 90) * 0.0174532925);
+		uint16_t x0 = sx * (r - w) + x;
+		uint16_t y0 = sy * (r - w) + y;
+		uint16_t x1 = sx * r + x;
+		uint16_t y1 = sy * r + y;
+
+		// Calculate pair of coordinates for segment end
+		float sx2 = cos((i + seg - 90) * 0.0174532925);
+		float sy2 = sin((i + seg - 90) * 0.0174532925);
+		int x2 = sx2 * (r - w) + x;
+		int y2 = sy2 * (r - w) + y;
+		int x3 = sx2 * r + x;
+		int y3 = sy2 * r + y;
+
+		if (i < v) {	
+			// Fill in coloured segments with 2 triangles
+			//      my_lcd.Set_Draw_color(colour);
+			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
+			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
+			//      text_colour = colour; // Save the last colour drawn
+
+			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, colour);
+			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, colour);
+		} else {
+			// Fill in blank segments
+			//      my_lcd.Set_Draw_color(GRAY);
+			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
+			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
+
+			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, bcolor);
+			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, bcolor);
+		}
+	}
+	return x + r;
+}
+
+static uint16_t rainbow(uint16_t value) {
+
+	// Value is expected to be in range 0-127
+	// The value is converted to a spectrum colour from 0 = blue through to 127 = red
+
+	uint16_t red = 0; // Red is the top 5 bits of a 16 bit colour value
+	uint16_t green = 0;// Green is the middle 6 bits
+	uint16_t blue = 0; // Blue is the bottom 5 bits
+
+	uint16_t quadrant = value / 32;
+
+	switch (quadrant) {
+
+		case 0:
+			blue = 31;
+			green = 2 * (value % 32);
+			red = 0;
+			break;
+
+		case 1:
+			blue = 31 - (value % 32);
+			green = 63;
+			red = 0;
+			break;
+		
+		case 2:
+			blue = 0;
+			green = 63;
+			red = value % 32;
+			break;
+		
+		case 3:
+			blue = 0;
+			green = 63 - 2 * (value % 32);
+			red = 31;
+			break;
+		
+		default:
+			break;
+
+	}
+
+	return (red << 11) + (green << 5) + blue;
+}
+
+/**************************************************************************/
+/*!
+   @brief     Draw a triangle with color-fill
+    @param    x0  Vertex #0 x coordinate
+    @param    y0  Vertex #0 y coordinate
+    @param    x1  Vertex #1 x coordinate
+    @param    y1  Vertex #1 y coordinate
+    @param    x2  Vertex #2 x coordinate
+    @param    y2  Vertex #2 y coordinate
+    @param    color 16-bit 5-6-5 Color to fill/draw with
+*/
+/**************************************************************************/
+void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+
+	int16_t a, b, y, last;
+	int16_t dx01, dy01, dx02, dy02, dx12, dy12;
+	int32_t sa = 0, sb = 0;
+
+	// Sort coordinates by Y order (y2 >= y1 >= y0)
+	if (y0 > y1) {
+		swap(y0, y1);
+		swap(x0, x1);
+	}
+
+	if (y1 > y2) {
+		swap(y2, y1);
+		swap(x2, x1);
+	}
+
+	if (y0 > y1) {
+		swap(y0, y1);
+		swap(x0, x1);
+	}
+
+	if (y0 == y2) { // Handle awkward all-on-same-line case as its own thing
+		a = b = x0;
+		if (x1 < a) {
+			a = x1;
+		} else if (x1 > b){
+			b = x1;
+		}
+		if (x2 < a) {
+			a = x2;
+		} else if (x2 > b) {
+			b = x2;
+		}
+
+		drawFastHLine(dev_data, a, y0, b + 1, color);
+
+		return;
+	}
 
 
+	dx01 = x1 - x0;
+	dy01 = y1 - y0;
+	dx02 = x2 - x0;
+	dy02 = y2 - y0;
+	dx12 = x2 - x1;
+	dy12 = y2 - y1;
 
+	// For upper part of triangle, find scanline crossings for segments
+	// 0-1 and 0-2.  If y1=y2 (flat-bottomed triangle), the scanline y1
+	// is included here (and second loop will be skipped, avoiding a /0
+	// error there), otherwise scanline y1 is skipped here and handled
+	// in the second loop...which also avoids a /0 error here if y0=y1
+	// (flat-topped triangle).
+	if (y1 == y2) {
+		last = y1; // Include y1 scanline
+	} else {
+		last = y1 - 1; // Skip it
+	}
 
+	for (y = y0; y <= last; y++) {
+		a = x0 + sa / dy01;
+		b = x0 + sb / dy02;
+		sa += dx01;
+		sb += dx02;
+		/* longhand:
+		a = x0 + (x1 - x0) * (y - y0) / (y1 - y0);
+		b = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
+		*/
+		if (a > b) {
+			swap(a, b);
+		}
 
+		drawFastHLine(dev_data, a, y, b + 1, color);
+	}
+
+	// For lower part of triangle, find scanline crossings for segments
+	// 0-2 and 1-2.  This loop is skipped if y1=y2.
+	sa = (int32_t)dx12 * (y - y1);
+	sb = (int32_t)dx02 * (y - y0);
+	for (; y <= y2; y++) {
+
+		a = x1 + sa / dy12;
+		b = x0 + sb / dy02;
+		sa += dx12;
+		sb += dx02;
+		/* longhand:
+		a = x1 + (x2 - x1) * (y - y1) / (y2 - y1);
+		b = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
+		*/
+		if (a > b) {
+			swap(a, b);
+		}
+
+		drawFastHLine(dev_data, a, y, b + 1, color);
+	}
+}

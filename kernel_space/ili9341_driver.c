@@ -138,7 +138,10 @@ static int ili9341_probe(struct spi_device *client) {
     ili9341_t.device->spi_dev.cs_gpio =  gpiod_get(dev, "chs", GPIOD_OUT_LOW);
 
     ili9341_init(ili9341_t.device);
-    fillScreen(ili9341_t.device, ILI9341_GREENYELLOW);
+
+    ringMeter1(ili9341_t.device, 500, 0, 1020, 10, 30, 40,10, ILI9341_YELLOW, RED2RED);
+    ringMeter1(ili9341_t.device, 750, 0, 1020, 10, 110, 40,10, ILI9341_YELLOW, BLUE2BLUE);
+    // fillScreen(ili9341_t.device, ILI9341_GREENYELLOW);
     pr_info("Initialize: ili9341 init 3\n"); 
     
     return 0;

@@ -42,6 +42,14 @@
 #define ILI9341_GREENYELLOW	0xAFE5
 #define ILI9341_PINK		0xF81F
 
+#define RED2RED 0
+#define GREEN2GREEN 1
+#define BLUE2BLUE 2
+#define BLUE2RED 3
+#define GREEN2RED 4
+#define RED2GREEN 5
+#define BWHITE 6
+
 #define CHAR_WIDTH 6
 #define CHAR_HEIGHT 8
 
@@ -64,5 +72,7 @@ void drawFastVLine(struct ili9341_device *dev_data, int x, int y, int h, int col
 void drawFastHLine(struct ili9341_device *dev_data, int x, int y, int w, int color);
 void drawLine(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1, int color);
 void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, int color, int size, int bgcolor);
+void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme);
 
 #endif /* __ILI9341_LIB_H_ */
