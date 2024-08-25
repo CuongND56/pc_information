@@ -3,6 +3,7 @@
 
 #include "ili9341_commands.h"
 #include "spi_common/spi_common.h"
+#include "font5x7.h"
 
 #define ILI9341_HEIGHT              320
 #define ILI9341_WIDTH               240
@@ -41,6 +42,9 @@
 #define ILI9341_GREENYELLOW	0xAFE5
 #define ILI9341_PINK		0xF81F
 
+#define CHAR_WIDTH 6
+#define CHAR_HEIGHT 8
+
 struct ili9341_device {
 	struct spi_common spi_dev;
     u8 *display_buff;
@@ -60,33 +64,5 @@ void drawFastVLine(struct ili9341_device *dev_data, int x, int y, int h, int col
 void drawFastHLine(struct ili9341_device *dev_data, int x, int y, int w, int color);
 void drawLine(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1, int color);
 void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, int color, int size, int bgcolor);
-
-#define CHAR_WIDTH 6
-#define CHAR_HEIGHT 8
-
-struct spi_cmd_list_data init_cmd_list_data_t[] = {
-	{ 0xCB, 5, { 0x39, 0x2C, 0x00, 0x34, 0x02 } },
-	{ 0xCF, 3, { 0x00, 0xC1, 0x30 } },
-	{ 0xE8, 3, { 0x85, 0x00, 0x78 } },
-	{ 0xEA, 2, { 0x00, 0x00 } },
-	{ 0xED, 4, { 0x64, 0x03, 0x12, 0x81 } },
-	{ 0xF7, 1, { 0x20 } },
-	{ ILI9341_PWCTR1, 1, { 0x23 } },
-	{ ILI9341_PWCTR2, 1, { 0x10 } },
-	{ ILI9341_VMCTR1, 2, { 0x3E, 0x28 } },
-	{ ILI9341_VMCTR2, 1, { 0x86 } },
-	{ ILI9341_MADCTL, 1, { 0x48 } },
-	{ ILI9341_PIXFMT, 1, { 0x55 } },
-	{ ILI9341_FRMCTR1, 2, { 0x00, 0x18 } },
-	{ ILI9341_DFUNCTR, 3, { 0x08, 0x82, 0x27 } },
-	{ 0xF2, 1, { 0x00 } },
-	{ ILI9341_GAMMASET, 1, { 0x01 } },
-	{ ILI9341_GMCTRP1, 15, { 0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00 } },
-	{ ILI9341_GMCTRN1, 15, { 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F } },
-	{ ILI9341_SLPOUT, 0, { } },
-	{ ILI9341_DISPON, 0, { } },
-	{ ILI9341_MADCTL, 1, { ILI9341_ROTATION } },
-	END_OF_TABLE
-};
 
 #endif /* __ILI9341_LIB_H_ */

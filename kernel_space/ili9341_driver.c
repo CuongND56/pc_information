@@ -52,6 +52,7 @@ static struct spi_driver ili9341_driver = {
 
 static struct file_operations fops = {
     .owner      = THIS_MODULE,
+    .read       = m_read,
     .write      = m_write,
     .open       = m_open,
     .release    = m_release,
@@ -92,11 +93,6 @@ static int __init initialize(void) {
         goto rm_cdev_add;
     }
     pr_info("Initialize: register spi driver\n");
-    ili9341_init(ili9341_t.device);
-    fillScreen(ili9341_t.device, ILI9341_PINK);
-    pr_info("Initialize: ili9341 init\n"); 
-    char test[] = "Hello Cuong\n";
-    drawText(ili9341_t.device, test, 0, 0, ILI9341_PINK, 20, ILI9341_WHITE);
     
     return 0;
 
@@ -114,14 +110,14 @@ static void __exit deinitialize(void) {
 
     pr_info("Deinitialize: Start...\n");
     spi_unregister_driver(&ili9341_driver);
-    cdev_del(&ili9341_t.m_cdev);
+    device_destroy(ili9341_t.m_class, ili9341_t.dev_num);          
     class_destroy(ili9341_t.m_class);
+    cdev_del(&ili9341_t.m_cdev);
     unregister_chrdev_region(ili9341_t.dev_num, 1);
 }
 
 static int ili9341_probe(struct spi_device *client) {
 
-    int status = -1;
     struct device *dev = &client->dev;
 
     pr_info("PROBE...\n");
@@ -157,6 +153,7 @@ static int ili9341_remove(struct spi_device *client) {
         gpiod_put(ili9341_t.device->spi_dev.cs_gpio);
         kfree(ili9341_t.device);
     }
+
     return 0;
 }
 
@@ -183,19 +180,21 @@ static int m_release (struct inode *mInode, struct file *mf) {
     return 0;
 }
 
-unsigned long __stack_chk_guard;
-void __stack_chk_guard_setup(void)
-{
-     __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
-}
+// unsigned long __stack_chk_guard;
+// void __stack_chk_guard_setup(void)
+// {
+//      __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
+// }
 
-void __stack_chk_fail(void)                         
-{
- /* Error message */                                 
-}// will be called when guard variable is corrupted 
+// void __stack_chk_fail(void)                         
+// {
+//  /* Error message */                                 
+// }// will be called when guard variable is corrupted 
 
+module_init(initialize);
+module_exit(deinitialize);
 
-module_spi_driver(ili9341_driver);
+// module_spi_driver(ili9341_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR(AUTHOR);
