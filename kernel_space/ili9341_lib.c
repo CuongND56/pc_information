@@ -28,6 +28,7 @@ static struct spi_cmd_list_data init_cmd_list_data_t[] = {
 };
 
 static uint16_t rainbow(uint16_t value);
+static long map(long x, long in_min, long in_max, long out_min, long out_max);
 
 int ili9341_init(struct ili9341_device *dev_data) {
 
@@ -220,19 +221,28 @@ int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, i
 	
 	// Minimum value of r is about 52 before value text intrudes on ring
 	// drawing the text first is an option
-	x += r;
-	y += r;										   // Calculate coords of centre of ring
+										   // Calculate coords of centre of ring
 												   //  int w = r / 8;    // Width of outer ring is 1/4 of radius
-	int angle = 150;							   // Half the sweep angle of meter (300 degrees)
+	int angle;							   // Half the sweep angle of meter (300 degrees)
 												   //  int text_colour = 0; // To hold the text colour
-	int v = map(value, vmin, vmax, -angle, angle); // Map the value to an angle v
+	int v;											 // Map the value to an angle v
 	uint16_t seg = 5;							   // Segments are 5 degrees wide = 60 segments for 300 degrees
 	uint16_t inc = 5;							   // Draw segments every 5 degrees, increase to 10 for segmented ring
+	int colour = 0;
+	int i;
+	float sx, sy, sx2, sy2;
+	uint16_t x0, y0, x1, y1;
+	int x2, y2, x3, y3;
+
+	angle = 150;
+	v = map(value, vmin, vmax, -angle, angle);
+	x += r;
+	y += r;	
 
 	// Draw colour blocks every inc degrees
-	for (int i = -angle; i < angle; i += inc) {
+	for (i = -angle; i < angle; i += inc) {
 		// Choose colour from scheme
-		int colour = 0;
+		colour = 0;
 		switch (scheme) {
 			case 0:
 				colour = RED;
@@ -264,20 +274,20 @@ int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, i
 		}
 
 		// Calculate pair of coordinates for segment start
-		float sx = cos((i - 90) * 0.0174532925);
-		float sy = sin((i - 90) * 0.0174532925);
-		uint16_t x0 = sx * (r - w) + x;
-		uint16_t y0 = sy * (r - w) + y;
-		uint16_t x1 = sx * r + x;
-		uint16_t y1 = sy * r + y;
+		sx = cosx((i - 90) * 0.0174532925f, 5);
+		sy = sinx((i - 90) * 0.0174532925f, 5);
+		x0 = sx * (r - w) + x;
+		y0 = sy * (r - w) + y;
+		x1 = sx * r + x;
+		y1 = sy * r + y;
 
 		// Calculate pair of coordinates for segment end
-		float sx2 = cos((i + seg - 90) * 0.0174532925);
-		float sy2 = sin((i + seg - 90) * 0.0174532925);
-		int x2 = sx2 * (r - w) + x;
-		int y2 = sy2 * (r - w) + y;
-		int x3 = sx2 * r + x;
-		int y3 = sy2 * r + y;
+		sx2 = cosx((i + seg - 90) * 0.0174532925f, 5);
+		sy2 = sinx((i + seg - 90) * 0.0174532925f, 5);
+		x2 = sx2 * (r - w) + x;
+		y2 = sy2 * (r - w) + y;
+		x3 = sx2 * r + x;
+		y3 = sy2 * r + y;
 
 		if (i < v) {	
 			// Fill in coloured segments with 2 triangles
@@ -455,3 +465,8 @@ void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, i
 		drawFastHLine(dev_data, a, y, b + 1, color);
 	}
 }
+
+static long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+

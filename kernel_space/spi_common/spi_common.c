@@ -1,5 +1,8 @@
 #include "spi_common.h"
 
+static long double factorialx(int n);
+static long double powerx(double base, int exp);
+
 void spi_common_select(struct spi_common *spi_dev) {
 	gpiod_set_value(spi_dev->cs_gpio, LOW);
 }
@@ -86,3 +89,51 @@ void spi_common_hardware_reset(struct spi_common *spi_dev) {
 	mdelay(5);
 	gpiod_set_value(spi_dev->rs_gpio, HIGH);
 }
+
+// Function to calculate factorial of a number
+static long double factorialx(int n) {
+    long double fact = 1.0;
+    int i = 1;
+    for (; i <= n; i++) {
+        fact *= i;
+    }
+    return fact;
+}
+
+// Function to calculate power of a number
+static long double powerx(double base, int exp) {
+    long double result = 1.0;
+    int i = 1;
+    for (; i <= exp; i++) {
+        result *= base;
+    }
+    return result;
+}
+
+// Define the sinTaylor function
+long double sinx(double x, int terms) {
+    long double sum = 0.0;
+    int n = 0;
+    for (; n < terms; n++) {
+        // Calculate the nth term
+        long double term = powerx(-1, n) * powerx(x, 2*n + 1) / factorialx(2*n + 1);
+        sum += term;
+    }
+    
+    return sum;
+}
+
+long double cosx(double x, int terms) {
+    long double sum = 1.0;
+    int n = 1;
+    
+    for (; n < terms; n++) {
+        // Calculate the nth term
+        long double term = powerx(-1, n) * powerx(x, 2*n) / factorialx(2*n);
+        sum += term;
+    }
+    
+    return sum;
+}
+
+
