@@ -51,8 +51,4 @@ int spi_common_isEndOfTable(struct spi_cmd_list_data *list);
 int spi_common_send_command_with_args(struct spi_common *spi_dev, struct spi_cmd_list_data *list, u32 msec);
 void spi_common_hardware_reset(struct spi_common *spi_dev);
 
-long double sinx(double x, int terms);
-
-long double cosx(double x, int terms);
-
 #endif

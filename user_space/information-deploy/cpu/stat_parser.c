@@ -4,6 +4,26 @@
 #define TMP_SIZE 4
 #define PROC_PATH "/proc/stat"
 
+static char *trim(char *str);
+
+static char *trim(char *str) {
+    while (*str && isspace((unsigned char)*str)) {
+        str++;
+    }
+    if (*str) {
+        // Here it is safe to use `strlen - 1` because
+        // `if (*str)` ensures that there is a character
+        char *end = str + strlen(str) - 1;
+
+        while (*end && isspace((unsigned char)*end)) {
+            end--;
+        }
+        *(end + 1) = '\0';
+    }
+    return str;
+}
+
+
 int scan_proc_stat(size_t *cpu_num) {
 
     FILE *proc_stat;
@@ -23,16 +43,23 @@ int scan_proc_stat(size_t *cpu_num) {
             return -1;
         }
         if (strcmp(strncpy(tmp, buff, 3), "cpu") == 0) {
+            
+            // printf("scan_proc_stat, buff: %s\n", buff);
+
             if (fscanf(proc_stat, "%*[^\n]\n") != 0) {
                 return -1;
             }
-            (*cpu_num)++;
+
+            if (strlen(buff) > 3) {
+                (*cpu_num)++;
+            }
         }
         else {
             fclose(proc_stat);
             return 0;
         }
     }
+
 
     fclose(proc_stat);
     return 0;
@@ -58,10 +85,20 @@ int read_proc_stat(struct stat_struct_t *stat) {
         }
 
         if (strcmp(strncpy(tmp, buff, 3), "cpu") == 0) {
-            if (fscanf(proc_stat, "%llu %llu %llu %llu %llu %llu %llu %llu %llu %llu%*[^\n]\n", &stat->cpu[i].user, &stat->cpu[i].nice, &stat->cpu[i].system, &stat->cpu[i].idle, &stat->cpu[i].io_wait, &stat->cpu[i].irq, &stat->cpu[i].soft_irq, &stat->cpu[i].steal, &stat->cpu[i].guest, &stat->cpu[i].guest_nice) != 10) {
+
+            if (strlen(buff) > 3) {
+                if (fscanf(proc_stat, "%llu %llu %llu %llu %llu %llu %llu %llu %llu %llu%*[^\n]\n", 
+                    &stat->cpu[i].user, &stat->cpu[i].nice, &stat->cpu[i].system, &stat->cpu[i].idle, 
+                    &stat->cpu[i].io_wait, &stat->cpu[i].irq, &stat->cpu[i].soft_irq, &stat->cpu[i].steal, 
+                    &stat->cpu[i].guest, &stat->cpu[i].guest_nice) != 10) {
+                        return -1;
+                    }
+                i++;
+            } else {
+                if (fscanf(proc_stat, "%*[^\n]\n") != 0) {
                 return -1;
             }
-            i++;
+            }
         }
         else {
             fclose(proc_stat);

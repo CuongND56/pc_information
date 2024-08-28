@@ -4,6 +4,7 @@
 #define VERSION     "1.0"
 #define DESCRIPTION "Bring up ILI9341"
 
+#define RING_METER  "ring_meter"
 
 static int __init initialize(void);
 static void __exit deinitialize(void);
@@ -17,6 +18,8 @@ static ssize_t m_write(struct file *mf, const char __user *user_buffer, size_t l
 static int m_open(struct inode *mInode, struct file *mf);
 static int m_release(struct inode *mInode, struct file *mf);
 
+
+char kernel_buff[50];
 
 struct ILI9341_Driver_t {
     dev_t dev_num;
@@ -139,9 +142,11 @@ static int ili9341_probe(struct spi_device *client) {
 
     ili9341_init(ili9341_t.device);
 
-    ringMeter1(ili9341_t.device, 500, 0, 1020, 10, 30, 40, 10, ILI9341_YELLOW, RED2RED);
-    ringMeter1(ili9341_t.device, 750, 0, 1020, 10, 110, 40,10, ILI9341_YELLOW, BLUE2BLUE);
+    // ringMeter1(ili9341_t.device, 500, 0, 1020, 10, 30, 40, 10, ILI9341_YELLOW, RED2RED);
+    // ringMeter1(ili9341_t.device, 750, 0, 1020, 10, 110, 40,10, ILI9341_YELLOW, BLUE2BLUE);
     // fillScreen(ili9341_t.device, ILI9341_GREENYELLOW);
+    drawFastHLine(ili9341_t.device, 10, 30, 110, ILI9341_GREENYELLOW);
+    drawFastHLine(ili9341_t.device, 10, 110, 110, ILI9341_ORANGE);
     pr_info("Initialize: ili9341 init 3\n"); 
     
     return 0;
@@ -168,7 +173,30 @@ static ssize_t m_read (struct file *mf, char __user *user_buffer, size_t length,
 
 static ssize_t m_write (struct file *mf, const char __user *user_buffer, size_t length, loff_t *offset) {
 
+    int status;
+    char command[50] = {0};
+    uint16_t x0, y0, x1, y1, x2, y2, color;
+
     pr_info("Write system call\n");
+    
+    /* Copy the buffer from user */
+    status = copy_from_user(kernel_buff, user_buffer, length);
+    if (status) {
+        pr_err("%s - copy_from_user failed\n", __func__);
+        return -EFAULT;
+    }
+
+    /* If the string is "clear", clear the display */
+    if (!strncmp(RING_METER, kernel_buff, strlen(RING_METER))) {
+        sscanf(kernel_buff, "%s %hd %hd %hd %hd %hd %hd %hd", command, &x0, &y0, &x1, &y1, &x2, &y2, &color);
+        drawFillTriangle(ili9341_t.device, x0, y0, x1, y1, x2, y2, color);
+    } else {
+        pr_info("message: %s\n", kernel_buff);
+    }
+
+    /* Make the buffer empty */
+    memset(kernel_buff, 0, sizeof(kernel_buff));
+    
     return length;
 }
 

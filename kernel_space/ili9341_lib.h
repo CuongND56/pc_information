@@ -87,6 +87,44 @@ typedef uint16_t colour_t;
 #define CHAR_WIDTH 6
 #define CHAR_HEIGHT 8
 
+
+#define ILI9341_MADCTL_MY			0x80
+#define ILI9341_MADCTL_MX			0x40
+#define ILI9341_MADCTL_MV			0x20
+#define ILI9341_MADCTL_ML			0x10
+#define ILI9341_MADCTL_RGB			0x00
+#define ILI9341_MADCTL_BGR			0x08
+#define ILI9341_MADCTL_MH			0x04
+
+typedef enum {
+	ORIENTATION_PORTRAIT 			= 0,
+	ORIENTATION_LANDSCAPE 			= 1,
+	ORIENTATION_PORTRAIT_MIRROR 	= 2,
+	ORIENTATION_LANDSCAPE_MIRROR 	= 3
+} OrientationTypeDef;
+
+typedef enum {
+  MemoryAccessControlNormalOrder,
+  MemoryAccessControlReverseOrder
+} MemoryAccessControlRefreshOrder;
+
+typedef enum {
+	MemoryAccessControlColorOrderRGB,
+	MemoryAccessControlColorOrderBGR
+} MemoryAccessControlColorOrder;
+
+
+// This struct is used to indicate the capabilities of different LCDs
+typedef struct
+{
+  uint16_t				width;         // LCD width in pixels (default orientation)
+  uint16_t				height;        // LCD height in pixels (default orientation)
+  OrientationTypeDef	orientation;   // Whether the LCD orientation can be modified
+//   bool					touchscreen;   // Whether the LCD has a touch screen
+//   bool					hwscrolling;   // Whether the LCD support HW scrolling
+} lcdPropertiesTypeDef;
+
+
 struct ili9341_device {
 	struct spi_common spi_dev;
     u8 *display_buff;
@@ -107,6 +145,7 @@ void drawFastHLine(struct ili9341_device *dev_data, int x, int y, int w, int col
 void drawLine(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1, int color);
 void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, int color, int size, int bgcolor);
 void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme);
+// int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme);
+void lcdSetOrientation(struct ili9341_device *dev_data, OrientationTypeDef value);
 
 #endif /* __ILI9341_LIB_H_ */

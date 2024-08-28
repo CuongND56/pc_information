@@ -27,14 +27,64 @@ static struct spi_cmd_list_data init_cmd_list_data_t[] = {
 	END_OF_TABLE
 };
 
-static uint16_t rainbow(uint16_t value);
-static long map(long x, long in_min, long in_max, long out_min, long out_max);
+static lcdPropertiesTypeDef  lcdProperties = { ILI9341_WIDTH, ILI9341_HEIGHT, ORIENTATION_PORTRAIT };
+
+static unsigned char lcdPortraitConfig = 0;
+static unsigned char lcdLandscapeConfig = 0;
+static unsigned char lcdPortraitMirrorConfig = 0;
+static unsigned char lcdLandscapeMirrorConfig = 0;
+
+static unsigned char lcdBuildMemoryAccessControlConfig(
+                        bool rowAddressOrder,
+                        bool columnAddressOrder,
+                        bool rowColumnExchange,
+                        bool verticalRefreshOrder,
+                        bool colorOrder,
+                        bool horizontalRefreshOrder);
+						
+
+// static uint16_t rainbow(uint16_t value);
+// static long map(long x, long in_min, long in_max, long out_min, long out_max);
 
 int ili9341_init(struct ili9341_device *dev_data) {
 
     int status;
 
     status = 0;
+
+
+	lcdPortraitConfig = lcdBuildMemoryAccessControlConfig(
+                                                    MemoryAccessControlNormalOrder,		// rowAddressOrder
+                                                    MemoryAccessControlReverseOrder,	// columnAddressOrder
+                                                    MemoryAccessControlNormalOrder,		// rowColumnExchange
+                                                    MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+                                                    MemoryAccessControlColorOrderBGR,	// colorOrder
+                                                    MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+
+  lcdLandscapeConfig = lcdBuildMemoryAccessControlConfig(
+                                                    MemoryAccessControlNormalOrder,		// rowAddressOrder
+                                                    MemoryAccessControlNormalOrder,		// columnAddressOrder
+                                                    MemoryAccessControlReverseOrder,	// rowColumnExchange
+                                                    MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+                                                    MemoryAccessControlColorOrderBGR,	// colorOrder
+                                                    MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+
+  lcdPortraitMirrorConfig = lcdBuildMemoryAccessControlConfig(
+		  	  	  	  	  	  	  	  	  	  	  	MemoryAccessControlReverseOrder,	// rowAddressOrder
+		                                            MemoryAccessControlNormalOrder,		// columnAddressOrder
+		                                            MemoryAccessControlNormalOrder,		// rowColumnExchange
+		                                            MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+		                                            MemoryAccessControlColorOrderBGR,	// colorOrder
+		                                            MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+
+  lcdLandscapeMirrorConfig = lcdBuildMemoryAccessControlConfig(
+                                                    MemoryAccessControlReverseOrder,	// rowAddressOrder
+                                                    MemoryAccessControlReverseOrder,	// columnAddressOrder
+                                                    MemoryAccessControlReverseOrder,	// rowColumnExchange
+                                                    MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+                                                    MemoryAccessControlColorOrderBGR,	// colorOrder
+                                                    MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+
 
 	spi_common_select(&dev_data->spi_dev);
     ili9341_hardware_reset(dev_data);
@@ -44,6 +94,8 @@ int ili9341_init(struct ili9341_device *dev_data) {
 	mdelay(1000);
     spi_common_send_command_with_args(&dev_data->spi_dev, init_cmd_list_data_t, 0);
 	spi_common_unselect(&dev_data->spi_dev);
+
+	lcdSetOrientation(dev_data, ORIENTATION_LANDSCAPE);
 
     return status;
 }
@@ -105,7 +157,8 @@ void drawPixel(struct ili9341_device *dev_data, int x, int y, int color) {
 
 	uint8_t data_color[] = { color >> 8, color & 0xFF };
 
-	if ((x < 0) || (x >= ILI9341_WIDTH) || (y < 0) || (y >= ILI9341_HEIGHT))
+	// if ((x < 0) || (x >= ILI9341_WIDTH) || (y < 0) || (y >= ILI9341_HEIGHT))
+	if ((x < 0) || (x >= lcdProperties.width) || (y < 0) || (y >= lcdProperties.height))
 		return;
 	spi_common_select(&dev_data->spi_dev);
 	setAddrWindow(dev_data, x, y, x + 1, y + 1);
@@ -117,8 +170,8 @@ void fillScreen(struct ili9341_device *dev_data, int color) {
 
 	int x, y;
 
-	for (x = 0; x < ILI9341_WIDTH; x++) {
-		for (y = 0; y < ILI9341_HEIGHT; y++) {
+	for (x = 0; x < lcdProperties.width; x++) {
+		for (y = 0; y < lcdProperties.height; y++) {
 			drawPixel(dev_data, x, y, color);
 		}
 	}
@@ -168,7 +221,8 @@ void drawFastVLine(struct ili9341_device *dev_data, int x, int y, int h, int col
 }
 
 void drawFastHLine(struct ili9341_device *dev_data, int x, int y, int w, int color) {
-	drawLine(dev_data, x, y, x + w - 1, y, color);
+	// drawLine(dev_data, x, y, x + w - 1, y, color);
+	drawLine(dev_data, x, y, w - 1, y, color);
 }
 
 void drawLine(struct ili9341_device *dev_data, int x0, int y0, int x1, int y1, int color) {
@@ -217,144 +271,144 @@ void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, i
 	}
 }
 
-int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme) {
+// int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme) {
 	
-	// Minimum value of r is about 52 before value text intrudes on ring
-	// drawing the text first is an option
-										   // Calculate coords of centre of ring
-												   //  int w = r / 8;    // Width of outer ring is 1/4 of radius
-	int angle;							   // Half the sweep angle of meter (300 degrees)
-												   //  int text_colour = 0; // To hold the text colour
-	int v;											 // Map the value to an angle v
-	uint16_t seg = 5;							   // Segments are 5 degrees wide = 60 segments for 300 degrees
-	uint16_t inc = 5;							   // Draw segments every 5 degrees, increase to 10 for segmented ring
-	int colour = 0;
-	int i;
-	float sx, sy, sx2, sy2;
-	uint16_t x0, y0, x1, y1;
-	int x2, y2, x3, y3;
+// 	// Minimum value of r is about 52 before value text intrudes on ring
+// 	// drawing the text first is an option
+// 										   // Calculate coords of centre of ring
+// 												   //  int w = r / 8;    // Width of outer ring is 1/4 of radius
+// 	int angle;							   // Half the sweep angle of meter (300 degrees)
+// 												   //  int text_colour = 0; // To hold the text colour
+// 	int v;											 // Map the value to an angle v
+// 	uint16_t seg = 5;							   // Segments are 5 degrees wide = 60 segments for 300 degrees
+// 	uint16_t inc = 5;							   // Draw segments every 5 degrees, increase to 10 for segmented ring
+// 	int colour = 0;
+// 	int i;
+// 	float sx, sy, sx2, sy2;
+// 	uint16_t x0, y0, x1, y1;
+// 	int x2, y2, x3, y3;
 
-	angle = 150;
-	v = map(value, vmin, vmax, -angle, angle);
-	x += r;
-	y += r;	
+// 	angle = 150;
+// 	v = map(value, vmin, vmax, -angle, angle);
+// 	x += r;
+// 	y += r;	
 
-	// Draw colour blocks every inc degrees
-	for (i = -angle; i < angle; i += inc) {
-		// Choose colour from scheme
-		colour = 0;
-		switch (scheme) {
-			case 0:
-				colour = RED;
-				break; // Fixed colour
-			case 1:
-				colour = GREEN;
-				break; // Fixed colour
-			case 2:
-				colour = BLUE;
-				break; // Fixed colour
-			case 3:
-				colour = rainbow(map(i, -angle, angle, 0, 127));
-				break; // Full spectrum blue to red
-			case 4:
-				colour = rainbow(map(i, -angle, angle, 63, 127));
-				break; // Green to red (high temperature etc)
-			case 5:
-				colour = rainbow(map(i, -angle, angle, 127, 63));
-				break; // Red to green (low battery etc)
-			case 6:
-				colour = BLACK;
-				break;
-			case 7:
-				colour = PINK;
-				break;
-			default:
-				colour = BLUE;
-				break; // Fixed colour
-		}
+// 	// Draw colour blocks every inc degrees
+// 	for (i = -angle; i < angle; i += inc) {
+// 		// Choose colour from scheme
+// 		colour = 0;
+// 		switch (scheme) {
+// 			case 0:
+// 				colour = RED;
+// 				break; // Fixed colour
+// 			case 1:
+// 				colour = GREEN;
+// 				break; // Fixed colour
+// 			case 2:
+// 				colour = BLUE;
+// 				break; // Fixed colour
+// 			case 3:
+// 				colour = rainbow(map(i, -angle, angle, 0, 127));
+// 				break; // Full spectrum blue to red
+// 			case 4:
+// 				colour = rainbow(map(i, -angle, angle, 63, 127));
+// 				break; // Green to red (high temperature etc)
+// 			case 5:
+// 				colour = rainbow(map(i, -angle, angle, 127, 63));
+// 				break; // Red to green (low battery etc)
+// 			case 6:
+// 				colour = BLACK;
+// 				break;
+// 			case 7:
+// 				colour = PINK;
+// 				break;
+// 			default:
+// 				colour = BLUE;
+// 				break; // Fixed colour
+// 		}
 
-		// Calculate pair of coordinates for segment start
-		sx = cosx((i - 90) * 0.0174532925f, 5);
-		sy = sinx((i - 90) * 0.0174532925f, 5);
-		x0 = sx * (r - w) + x;
-		y0 = sy * (r - w) + y;
-		x1 = sx * r + x;
-		y1 = sy * r + y;
+// 		// Calculate pair of coordinates for segment start
+// 		sx = cosx((i - 90) * 0.0174532925f, 5);
+// 		sy = sinx((i - 90) * 0.0174532925f, 5);
+// 		x0 = sx * (r - w) + x;
+// 		y0 = sy * (r - w) + y;
+// 		x1 = sx * r + x;
+// 		y1 = sy * r + y;
 
-		// Calculate pair of coordinates for segment end
-		sx2 = cosx((i + seg - 90) * 0.0174532925f, 5);
-		sy2 = sinx((i + seg - 90) * 0.0174532925f, 5);
-		x2 = sx2 * (r - w) + x;
-		y2 = sy2 * (r - w) + y;
-		x3 = sx2 * r + x;
-		y3 = sy2 * r + y;
+// 		// Calculate pair of coordinates for segment end
+// 		sx2 = cosx((i + seg - 90) * 0.0174532925f, 5);
+// 		sy2 = sinx((i + seg - 90) * 0.0174532925f, 5);
+// 		x2 = sx2 * (r - w) + x;
+// 		y2 = sy2 * (r - w) + y;
+// 		x3 = sx2 * r + x;
+// 		y3 = sy2 * r + y;
 
-		if (i < v) {	
-			// Fill in coloured segments with 2 triangles
-			//      my_lcd.Set_Draw_color(colour);
-			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
-			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
-			//      text_colour = colour; // Save the last colour drawn
+// 		if (i < v) {	
+// 			// Fill in coloured segments with 2 triangles
+// 			//      my_lcd.Set_Draw_color(colour);
+// 			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
+// 			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
+// 			//      text_colour = colour; // Save the last colour drawn
 
-			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, colour);
-			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, colour);
-		} else {
-			// Fill in blank segments
-			//      my_lcd.Set_Draw_color(GRAY);
-			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
-			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
+// 			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, colour);
+// 			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, colour);
+// 		} else {
+// 			// Fill in blank segments
+// 			//      my_lcd.Set_Draw_color(GRAY);
+// 			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
+// 			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
 
-			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, bcolor);
-			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, bcolor);
-		}
-	}
-	return x + r;
-}
+// 			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, bcolor);
+// 			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, bcolor);
+// 		}
+// 	}
+// 	return x + r;
+// }
 
-static uint16_t rainbow(uint16_t value) {
+// static uint16_t rainbow(uint16_t value) {
 
-	// Value is expected to be in range 0-127
-	// The value is converted to a spectrum colour from 0 = blue through to 127 = red
+// 	// Value is expected to be in range 0-127
+// 	// The value is converted to a spectrum colour from 0 = blue through to 127 = red
 
-	uint16_t red = 0; // Red is the top 5 bits of a 16 bit colour value
-	uint16_t green = 0;// Green is the middle 6 bits
-	uint16_t blue = 0; // Blue is the bottom 5 bits
+// 	uint16_t red = 0; // Red is the top 5 bits of a 16 bit colour value
+// 	uint16_t green = 0;// Green is the middle 6 bits
+// 	uint16_t blue = 0; // Blue is the bottom 5 bits
 
-	uint16_t quadrant = value / 32;
+// 	uint16_t quadrant = value / 32;
 
-	switch (quadrant) {
+// 	switch (quadrant) {
 
-		case 0:
-			blue = 31;
-			green = 2 * (value % 32);
-			red = 0;
-			break;
+// 		case 0:
+// 			blue = 31;
+// 			green = 2 * (value % 32);
+// 			red = 0;
+// 			break;
 
-		case 1:
-			blue = 31 - (value % 32);
-			green = 63;
-			red = 0;
-			break;
+// 		case 1:
+// 			blue = 31 - (value % 32);
+// 			green = 63;
+// 			red = 0;
+// 			break;
 		
-		case 2:
-			blue = 0;
-			green = 63;
-			red = value % 32;
-			break;
+// 		case 2:
+// 			blue = 0;
+// 			green = 63;
+// 			red = value % 32;
+// 			break;
 		
-		case 3:
-			blue = 0;
-			green = 63 - 2 * (value % 32);
-			red = 31;
-			break;
+// 		case 3:
+// 			blue = 0;
+// 			green = 63 - 2 * (value % 32);
+// 			red = 31;
+// 			break;
 		
-		default:
-			break;
+// 		default:
+// 			break;
 
-	}
+// 	}
 
-	return (red << 11) + (green << 5) + blue;
-}
+// 	return (red << 11) + (green << 5) + blue;
+// }
 
 /**************************************************************************/
 /*!
@@ -392,17 +446,12 @@ void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, i
 
 	if (y0 == y2) { // Handle awkward all-on-same-line case as its own thing
 		a = b = x0;
-		if (x1 < a) {
-			a = x1;
-		} else if (x1 > b){
-			b = x1;
-		}
-		if (x2 < a) {
-			a = x2;
-		} else if (x2 > b) {
-			b = x2;
-		}
-
+		if (x1 < a) 		a = x1;
+		else if (x1 > b) 	b = x1;
+		
+		if (x2 < a) 		a = x2;
+		else if (x2 > b) 	b = x2;
+		
 		drawFastHLine(dev_data, a, y0, b + 1, color);
 
 		return;
@@ -466,7 +515,58 @@ void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, i
 	}
 }
 
-static long map(long x, long in_min, long in_max, long out_min, long out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+void lcdSetOrientation(struct ili9341_device *dev_data, OrientationTypeDef value) {
+
+	lcdProperties.orientation = value;
+
+	spi_common_select(&dev_data->spi_dev);
+
+	spi_common_send_one_command(&dev_data->spi_dev, ILI9341_MEMCONTROL);
+
+	switch (lcdProperties.orientation)
+	{
+		case ORIENTATION_PORTRAIT:
+			spi_common_send_one_data(&dev_data->spi_dev, lcdPortraitConfig);
+			lcdProperties.width = ILI9341_WIDTH;
+			lcdProperties.height = ILI9341_HEIGHT;
+			break;
+		case ORIENTATION_PORTRAIT_MIRROR:
+			spi_common_send_one_data(&dev_data->spi_dev, lcdPortraitMirrorConfig);
+			lcdProperties.width = ILI9341_WIDTH;
+			lcdProperties.height = ILI9341_HEIGHT;
+			break;
+		case ORIENTATION_LANDSCAPE:
+			spi_common_send_one_data(&dev_data->spi_dev, lcdLandscapeConfig);
+			lcdProperties.width = ILI9341_HEIGHT;
+			lcdProperties.height = ILI9341_WIDTH;
+			break;
+		case ORIENTATION_LANDSCAPE_MIRROR:
+			spi_common_send_one_data(&dev_data->spi_dev, lcdLandscapeMirrorConfig);
+			lcdProperties.width = ILI9341_HEIGHT;
+			lcdProperties.height = ILI9341_WIDTH;
+			break;
+		default:
+			break;
+	}
+
+	setAddrWindow(dev_data, 0, 0, lcdProperties.width - 1, lcdProperties.height - 1);
+	spi_common_unselect(&dev_data->spi_dev);
+}
+
+static unsigned char lcdBuildMemoryAccessControlConfig( bool rowAddressOrder,
+														bool columnAddressOrder,
+														bool rowColumnExchange,
+														bool verticalRefreshOrder,
+														bool colorOrder,
+														bool horizontalRefreshOrder ) {
+
+	unsigned char value 				= 0;
+	if(horizontalRefreshOrder) value 	|= ILI9341_MADCTL_MH;
+	if(colorOrder) value 				|= ILI9341_MADCTL_BGR;
+	if(verticalRefreshOrder) value 		|= ILI9341_MADCTL_ML;
+	if(rowColumnExchange) value 		|= ILI9341_MADCTL_MV;
+	if(columnAddressOrder) value 		|= ILI9341_MADCTL_MX;
+	if(rowAddressOrder) value 			|= ILI9341_MADCTL_MY;
+	return value;
 }
 

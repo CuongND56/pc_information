@@ -1,7 +1,7 @@
 .PHONY: all clean
 
-# CC = /home/cuong/Desktop/kernel_build/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
-CC = gcc
+CC = /home/cuong/Desktop/kernel_build/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
+# CC = gcc
 NAME = main
 CUR_DIR = .
 BUILD_DIR = $(CUR_DIR)/build
@@ -22,10 +22,10 @@ INC_FLAGS = $(addprefix -I, $(PRG_DIR)) -lpthread
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CC) $(OBJS) -o $(NAME)
+	$(CC) $(OBJS) -o $(NAME) $(INC_FLAGS) -lm
 
 $(BUILD_DIR)/%.o: $(SRCS) | $(BUILD_DIR)
-	$(CC) -c -o $@ $(filter %/$*.c,$(SRCS)) $(INC_FLAGS)
+	$(CC) -c -o $@ $(filter %/$*.c,$(SRCS)) $(INC_FLAGS) -lm
 
 $(BUILD_DIR):
 	mkdir -p $@	

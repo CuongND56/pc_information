@@ -46,6 +46,7 @@
 #define ILI9341_RDID4         0xDD
 #define ILI9341_GMCTRP1       0xE0
 #define ILI9341_GMCTRN1       0xE1
+#define ILI9341_MEMCONTROL			0x36
 
 
 #define ILI9341_MADCTL_BGR 0x08

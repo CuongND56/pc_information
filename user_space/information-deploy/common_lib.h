@@ -7,6 +7,8 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>          // isdigit, isspace
+#include <math.h>
+#include <stdint.h>
 
 #include <pthread.h>
 #include <unistd.h>         // sleep

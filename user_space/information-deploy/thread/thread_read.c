@@ -8,6 +8,7 @@ void *thread_read(void *args) {
     pthread_mutex_lock(&(mWorker->mManager->lock));
 
     status = scan_proc_stat(&(mWorker->mManager->inform.cpu_stat.cpu_num));
+    printf("%s: thread_read, status: %d, number of cpu: %d\n", mWorker->TAG, status, mWorker->mManager->inform.cpu_stat.cpu_num);
     if (status == -1) {
         printf("%s: scan_proc_stat failed --> exit\n", mWorker->TAG);
         pthread_exit(NULL);
