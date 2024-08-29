@@ -2,12 +2,11 @@
 
 #include "font/024_Open_Sans_Bold.h"
 #include "font/020_Open_Sans_Bold.h"
+#include "parser_handle.h"
 
 #define AUTHOR      "cuongnd56 ngoduycuong0506@gmail.com"
 #define VERSION     "1.0"
 #define DESCRIPTION "Bring up ILI9341"
-
-#define RING_METER  "ring_meter"
 
 static int __init initialize(void);
 static void __exit deinitialize(void);
@@ -192,12 +191,16 @@ static ssize_t m_write (struct file *mf, const char __user *user_buffer, size_t 
     }
 
     /* If the string is "clear", clear the display */
-    if (!strncmp(RING_METER, kernel_buff, strlen(RING_METER))) {
-        sscanf(kernel_buff, "%s %hd %hd %hd %hd %hd %hd %hd", command, &x0, &y0, &x1, &y1, &x2, &y2, &color);
-        drawFillTriangle(ili9341_t.device, x0, y0, x1, y1, x2, y2, color);
-    } else {
-        pr_info("message: %s\n", kernel_buff);
-    }
+    // if (!strncmp(RING_METER, kernel_buff, strlen(RING_METER))) {
+    //     sscanf(kernel_buff, "%s %hd %hd %hd %hd %hd %hd %hd", command, &x0, &y0, &x1, &y1, &x2, &y2, &color);
+    //     drawFillTriangle(ili9341_t.device, x0, y0, x1, y1, x2, y2, color);
+    // } else {
+    //     pr_info("message: %s\n", kernel_buff);
+    // }
+    
+    if ((status = parser_handle(ili9341_t.device, kernel_buff)) != SUCCESS) {
+        pr_info("parser_handle failed, err: %d\n", status);
+    } 
 
     /* Make the buffer empty */
     memset(kernel_buff, 0, sizeof(kernel_buff));

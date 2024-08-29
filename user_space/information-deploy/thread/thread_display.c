@@ -4,7 +4,7 @@
 #define DEV_FILE    "/dev/ili9341_device"
 #define STR_MAX     100
 
-#define RING_METER  "ring_meter"
+#define RING_METER  "RING_METER"
 
 static long map(long x, long in_min, long in_max, long out_min, long out_max);
 static int ringMeter1(int fd, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme);

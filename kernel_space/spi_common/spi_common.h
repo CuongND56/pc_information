@@ -17,6 +17,7 @@
 #include <linux/uaccess.h>
 #include <linux/errno.h>
 #include <linux/gpio.h>
+#include <linux/string.h>
 
 #define LOW                     0
 #define HIGH                    1
