@@ -45,46 +45,43 @@ static unsigned char lcdBuildMemoryAccessControlConfig(
 
 // static uint16_t rainbow(uint16_t value);
 // static long map(long x, long in_min, long in_max, long out_min, long out_max);
+static void lcdFillCircleHelper(struct ili9341_device *dev_data, int16_t x0, int16_t y0, int16_t r, uint8_t cornername, int16_t delta, uint16_t color);
 
 int ili9341_init(struct ili9341_device *dev_data) {
 
-    int status;
-
-    status = 0;
-
+    int status = 0;
 
 	lcdPortraitConfig = lcdBuildMemoryAccessControlConfig(
-                                                    MemoryAccessControlNormalOrder,		// rowAddressOrder
-                                                    MemoryAccessControlReverseOrder,	// columnAddressOrder
-                                                    MemoryAccessControlNormalOrder,		// rowColumnExchange
-                                                    MemoryAccessControlNormalOrder,		// verticalRefreshOrder
-                                                    MemoryAccessControlColorOrderBGR,	// colorOrder
-                                                    MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+														MemoryAccessControlNormalOrder,		// rowAddressOrder
+														MemoryAccessControlReverseOrder,	// columnAddressOrder
+														MemoryAccessControlNormalOrder,		// rowColumnExchange
+														MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+														MemoryAccessControlColorOrderBGR,	// colorOrder
+														MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
 
-  lcdLandscapeConfig = lcdBuildMemoryAccessControlConfig(
-                                                    MemoryAccessControlNormalOrder,		// rowAddressOrder
-                                                    MemoryAccessControlNormalOrder,		// columnAddressOrder
-                                                    MemoryAccessControlReverseOrder,	// rowColumnExchange
-                                                    MemoryAccessControlNormalOrder,		// verticalRefreshOrder
-                                                    MemoryAccessControlColorOrderBGR,	// colorOrder
-                                                    MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+	lcdLandscapeConfig = lcdBuildMemoryAccessControlConfig(
+														MemoryAccessControlNormalOrder,		// rowAddressOrder
+														MemoryAccessControlNormalOrder,		// columnAddressOrder
+														MemoryAccessControlReverseOrder,	// rowColumnExchange
+														MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+														MemoryAccessControlColorOrderBGR,	// colorOrder
+														MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
 
-  lcdPortraitMirrorConfig = lcdBuildMemoryAccessControlConfig(
-		  	  	  	  	  	  	  	  	  	  	  	MemoryAccessControlReverseOrder,	// rowAddressOrder
-		                                            MemoryAccessControlNormalOrder,		// columnAddressOrder
-		                                            MemoryAccessControlNormalOrder,		// rowColumnExchange
-		                                            MemoryAccessControlNormalOrder,		// verticalRefreshOrder
-		                                            MemoryAccessControlColorOrderBGR,	// colorOrder
-		                                            MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
+	lcdPortraitMirrorConfig = lcdBuildMemoryAccessControlConfig(
+														MemoryAccessControlReverseOrder,	// rowAddressOrder
+														MemoryAccessControlNormalOrder,		// columnAddressOrder
+														MemoryAccessControlNormalOrder,		// rowColumnExchange
+														MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+														MemoryAccessControlColorOrderBGR,	// colorOrder
+														MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
 
-  lcdLandscapeMirrorConfig = lcdBuildMemoryAccessControlConfig(
-                                                    MemoryAccessControlReverseOrder,	// rowAddressOrder
-                                                    MemoryAccessControlReverseOrder,	// columnAddressOrder
-                                                    MemoryAccessControlReverseOrder,	// rowColumnExchange
-                                                    MemoryAccessControlNormalOrder,		// verticalRefreshOrder
-                                                    MemoryAccessControlColorOrderBGR,	// colorOrder
-                                                    MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
-
+	lcdLandscapeMirrorConfig = lcdBuildMemoryAccessControlConfig(
+														MemoryAccessControlReverseOrder,	// rowAddressOrder
+														MemoryAccessControlReverseOrder,	// columnAddressOrder
+														MemoryAccessControlReverseOrder,	// rowColumnExchange
+														MemoryAccessControlNormalOrder,		// verticalRefreshOrder
+														MemoryAccessControlColorOrderBGR,	// colorOrder
+														MemoryAccessControlNormalOrder);	// horizontalRefreshOrder
 
 	spi_common_select(&dev_data->spi_dev);
     ili9341_hardware_reset(dev_data);
@@ -194,15 +191,17 @@ void drawChar(struct ili9341_device *dev_data, char c, int x, int y, int color, 
 		temp[k] = font[(uint8_t)character][k];
 	}
 
-	drawRect(dev_data, x, y, CHAR_WIDTH * size, CHAR_HEIGHT * size, bgcolor);
+	drawRect(dev_data, x, y, x + CHAR_WIDTH * size, y + CHAR_HEIGHT * size, bgcolor);
 
 	for (j = 0; j < CHAR_WIDTH; j++) {
 		for (i = 0; i < CHAR_HEIGHT; i++) {
 			if (temp[j] & (1 << i)) {
-				if (size == 1)
 					drawPixel(dev_data, x + j, y + i, color);
-				else
-					drawRect(dev_data, x + (j * size), y + (i * size), size, size, color);
+
+				// if (size == 1)
+				// 	drawPixel(dev_data, x + j, y + i, color);
+				// else
+				// 	drawRect(dev_data, x + (j * size), y + (i * size), size, size, color);
 			}
 		}
 	}
@@ -211,13 +210,13 @@ void drawChar(struct ili9341_device *dev_data, char c, int x, int y, int color, 
 void drawRect(struct ili9341_device *dev_data, int x, int y, int w, int h, int color) {
 
 	drawFastHLine(dev_data, x, y, w, color);
-	drawFastHLine(dev_data, x, y + h - 1, w, color);
+	drawFastHLine(dev_data, x, h - 1, w, color);
 	drawFastVLine(dev_data, x, y, h, color);
-	drawFastVLine(dev_data, x + w - 1, y, h, color);
+	drawFastVLine(dev_data, w - 1, y, h, color);
 }
 
 void drawFastVLine(struct ili9341_device *dev_data, int x, int y, int h, int color) {
-	drawLine(dev_data, x, y, x, y + h - 1, color);
+	drawLine(dev_data, x, y, x, h - 1, color);
 }
 
 void drawFastHLine(struct ili9341_device *dev_data, int x, int y, int w, int color) {
@@ -268,149 +267,10 @@ void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, i
 	while (*text) {
 		drawChar(dev_data, *text, x, y, color, size, bgcolor);
 		x += CHAR_WIDTH * size;
+		text ++;
 	}
 }
 
-// int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme) {
-	
-// 	// Minimum value of r is about 52 before value text intrudes on ring
-// 	// drawing the text first is an option
-// 										   // Calculate coords of centre of ring
-// 												   //  int w = r / 8;    // Width of outer ring is 1/4 of radius
-// 	int angle;							   // Half the sweep angle of meter (300 degrees)
-// 												   //  int text_colour = 0; // To hold the text colour
-// 	int v;											 // Map the value to an angle v
-// 	uint16_t seg = 5;							   // Segments are 5 degrees wide = 60 segments for 300 degrees
-// 	uint16_t inc = 5;							   // Draw segments every 5 degrees, increase to 10 for segmented ring
-// 	int colour = 0;
-// 	int i;
-// 	float sx, sy, sx2, sy2;
-// 	uint16_t x0, y0, x1, y1;
-// 	int x2, y2, x3, y3;
-
-// 	angle = 150;
-// 	v = map(value, vmin, vmax, -angle, angle);
-// 	x += r;
-// 	y += r;	
-
-// 	// Draw colour blocks every inc degrees
-// 	for (i = -angle; i < angle; i += inc) {
-// 		// Choose colour from scheme
-// 		colour = 0;
-// 		switch (scheme) {
-// 			case 0:
-// 				colour = RED;
-// 				break; // Fixed colour
-// 			case 1:
-// 				colour = GREEN;
-// 				break; // Fixed colour
-// 			case 2:
-// 				colour = BLUE;
-// 				break; // Fixed colour
-// 			case 3:
-// 				colour = rainbow(map(i, -angle, angle, 0, 127));
-// 				break; // Full spectrum blue to red
-// 			case 4:
-// 				colour = rainbow(map(i, -angle, angle, 63, 127));
-// 				break; // Green to red (high temperature etc)
-// 			case 5:
-// 				colour = rainbow(map(i, -angle, angle, 127, 63));
-// 				break; // Red to green (low battery etc)
-// 			case 6:
-// 				colour = BLACK;
-// 				break;
-// 			case 7:
-// 				colour = PINK;
-// 				break;
-// 			default:
-// 				colour = BLUE;
-// 				break; // Fixed colour
-// 		}
-
-// 		// Calculate pair of coordinates for segment start
-// 		sx = cosx((i - 90) * 0.0174532925f, 5);
-// 		sy = sinx((i - 90) * 0.0174532925f, 5);
-// 		x0 = sx * (r - w) + x;
-// 		y0 = sy * (r - w) + y;
-// 		x1 = sx * r + x;
-// 		y1 = sy * r + y;
-
-// 		// Calculate pair of coordinates for segment end
-// 		sx2 = cosx((i + seg - 90) * 0.0174532925f, 5);
-// 		sy2 = sinx((i + seg - 90) * 0.0174532925f, 5);
-// 		x2 = sx2 * (r - w) + x;
-// 		y2 = sy2 * (r - w) + y;
-// 		x3 = sx2 * r + x;
-// 		y3 = sy2 * r + y;
-
-// 		if (i < v) {	
-// 			// Fill in coloured segments with 2 triangles
-// 			//      my_lcd.Set_Draw_color(colour);
-// 			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
-// 			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
-// 			//      text_colour = colour; // Save the last colour drawn
-
-// 			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, colour);
-// 			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, colour);
-// 		} else {
-// 			// Fill in blank segments
-// 			//      my_lcd.Set_Draw_color(GRAY);
-// 			//      my_lcd.Fill_Triangle(x0, y0, x1, y1, x2, y2);
-// 			//      my_lcd.Fill_Triangle(x1, y1, x2, y2, x3, y3);
-
-// 			drawFillTriangle(dev_data, x0, y0, x1, y1, x2, y2, bcolor);
-// 			drawFillTriangle(dev_data, x1, y1, x2, y2, x3, y3, bcolor);
-// 		}
-// 	}
-// 	return x + r;
-// }
-
-// static uint16_t rainbow(uint16_t value) {
-
-// 	// Value is expected to be in range 0-127
-// 	// The value is converted to a spectrum colour from 0 = blue through to 127 = red
-
-// 	uint16_t red = 0; // Red is the top 5 bits of a 16 bit colour value
-// 	uint16_t green = 0;// Green is the middle 6 bits
-// 	uint16_t blue = 0; // Blue is the bottom 5 bits
-
-// 	uint16_t quadrant = value / 32;
-
-// 	switch (quadrant) {
-
-// 		case 0:
-// 			blue = 31;
-// 			green = 2 * (value % 32);
-// 			red = 0;
-// 			break;
-
-// 		case 1:
-// 			blue = 31 - (value % 32);
-// 			green = 63;
-// 			red = 0;
-// 			break;
-		
-// 		case 2:
-// 			blue = 0;
-// 			green = 63;
-// 			red = value % 32;
-// 			break;
-		
-// 		case 3:
-// 			blue = 0;
-// 			green = 63 - 2 * (value % 32);
-// 			red = 31;
-// 			break;
-		
-// 		default:
-// 			break;
-
-// 	}
-
-// 	return (red << 11) + (green << 5) + blue;
-// }
-
-/**************************************************************************/
 /*!
    @brief     Draw a triangle with color-fill
     @param    x0  Vertex #0 x coordinate
@@ -569,4 +429,110 @@ static unsigned char lcdBuildMemoryAccessControlConfig( bool rowAddressOrder,
 	if(rowAddressOrder) value 			|= ILI9341_MADCTL_MY;
 	return value;
 }
+
+void LCD_Font(struct ili9341_device *dev_data, uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, uint8_t size, uint32_t color24) {
+
+	int16_t cursor_x = x;
+	int16_t cursor_y = y;
+	uint16_t text_pos;
+	GFXfont font;
+	memcpy(&font, p_font, sizeof(GFXfont));
+	for (text_pos = 0; text_pos < strlen(text); text_pos++) {
+		char c = text[text_pos];
+		if (c == '\n') {
+			cursor_x = x;
+			cursor_y += font.yAdvance * size;
+		}
+		else if (c >= font.first && c <= font.last && c != '\r') {
+			GFXglyph glyph;
+			memcpy(&glyph, &font.glyph[c - font.first], sizeof(GFXglyph));
+			LCD_Char(dev_data, cursor_x, cursor_y, &glyph, &font, size, color24);
+			cursor_x += glyph.xAdvance * size;
+		}
+	}
+}
+
+void LCD_Char(struct ili9341_device *dev_data, int16_t x, int16_t y, const GFXglyph *glyph, const GFXfont *font, uint8_t size, uint32_t color24) {
+
+	uint8_t  *bitmap = font -> bitmap;
+	uint16_t bo = glyph -> bitmapOffset;
+	uint8_t bits = 0, bit = 0;
+	uint16_t set_pixels = 0;
+	uint8_t  cur_x, cur_y;
+
+	for (cur_y = 0; cur_y < glyph -> height; cur_y++) {
+
+		for (cur_x = 0; cur_x < glyph -> width; cur_x++) {
+
+			if (bit == 0) {
+				bits = (*(const unsigned char *)(&bitmap[bo++]));
+				bit  = 0x80;
+			}
+
+			if (bits & bit) set_pixels++;
+			else if (set_pixels > 0) {
+				lcdFillRect(dev_data, x + (glyph -> xOffset + cur_x - set_pixels) * size, y + (glyph -> yOffset + cur_y) * size, size * set_pixels, size, color24);
+				set_pixels = 0;
+			}
+			bit >>= 1;
+		}
+		if (set_pixels > 0) { 
+			lcdFillRect(dev_data, x + (glyph -> xOffset + cur_x-set_pixels) * size, y + (glyph -> yOffset + cur_y) * size, size * set_pixels, size, color24);
+			set_pixels = 0;
+		}
+	}
+}
+
+void lcdFillRect(struct ili9341_device *dev_data, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t fillcolor) {
+
+	uint16_t y1;
+	// clipping
+	if((x >= lcdProperties.width) || (y >= lcdProperties.height)) return;
+	if((x + w - 1) >= lcdProperties.width) w = lcdProperties.width - x;
+	if((y + h - 1) >= lcdProperties.height) h = lcdProperties.height - y;
+
+	for(y1 = y; y1 <= y + h; y1++)
+	{
+		drawFastHLine(dev_data, x, y1, x + w, fillcolor);
+	}
+}
+
+void lcdFillRoundRect(struct ili9341_device *dev_data, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color) {
+	// smarter version
+	lcdFillRect(dev_data, x + r, y, w - 2 * r, h, color);
+
+	// draw four corners
+	lcdFillCircleHelper(dev_data, x + w - r - 1, y + r, r, 1, h - 2 * r - 1, color);
+	lcdFillCircleHelper(dev_data, x + r, y + r, r, 2, h - 2 * r - 1, color);
+}
+
+void lcdFillCircleHelper(struct ili9341_device *dev_data, int16_t x0, int16_t y0, int16_t r, uint8_t cornername, int16_t delta, uint16_t color) {
+	int16_t f = 1 - r;
+	int16_t ddF_x = 1;
+	int16_t ddF_y = -2 * r;
+	int16_t x = 0;
+	int16_t y = r;
+
+	while (x < y){
+
+		if (f >= 0) {
+			y--;
+			ddF_y += 2;
+			f += ddF_y;
+		}
+		x++;
+		ddF_x += 2;
+		f += ddF_x;
+
+		if (cornername & 0x1) {
+			drawFastVLine(dev_data, x0 + x, y0 - y, y0 + y + 1 + delta, color);
+			drawFastVLine(dev_data, x0 + y, y0 - x, y0 + x + 1 + delta, color);
+		}
+		if (cornername & 0x2) {
+			drawFastVLine(dev_data, x0 - x, y0 - y, y0 + y + 1 + delta, color);
+			drawFastVLine(dev_data, x0 - y, y0 - x, y0 + x + 1 + delta, color);
+		}
+	}
+}
+
 

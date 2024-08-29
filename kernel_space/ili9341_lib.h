@@ -4,6 +4,7 @@
 #include "ili9341_commands.h"
 #include "spi_common/spi_common.h"
 #include "font5x7.h"
+#include "font/fonts.h"
 
 #define ILI9341_HEIGHT              320
 #define ILI9341_WIDTH               240
@@ -84,8 +85,8 @@ typedef uint16_t colour_t;
 #define RED2GREEN 5
 #define BWHITE 6
 
-#define CHAR_WIDTH 6
-#define CHAR_HEIGHT 8
+#define CHAR_WIDTH 5
+#define CHAR_HEIGHT 7
 
 
 #define ILI9341_MADCTL_MY			0x80
@@ -147,5 +148,10 @@ void drawText(struct ili9341_device *dev_data, const char *text, int x, int y, i
 void drawFillTriangle(struct ili9341_device *dev_data, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 // int ringMeter1(struct ili9341_device *dev_data, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme);
 void lcdSetOrientation(struct ili9341_device *dev_data, OrientationTypeDef value);
+
+void LCD_Font(struct ili9341_device *dev_data, uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, uint8_t size, uint32_t color24);
+void LCD_Char(struct ili9341_device *dev_data, int16_t x, int16_t y, const GFXglyph *glyph, const GFXfont *font, uint8_t size, uint32_t color24);
+void lcdFillRect(struct ili9341_device *dev_data, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t fillcolor);
+void lcdFillRoundRect(struct ili9341_device *dev_data, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 
 #endif /* __ILI9341_LIB_H_ */
