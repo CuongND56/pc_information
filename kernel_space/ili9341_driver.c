@@ -148,13 +148,6 @@ static int ili9341_probe(struct spi_device *client) {
 
     ili9341_init(ili9341_t.device);
 
-    // ringMeter1(ili9341_t.device, 500, 0, 1020, 10, 30, 40, 10, ILI9341_YELLOW, RED2RED);
-    // ringMeter1(ili9341_t.device, 750, 0, 1020, 10, 110, 40,10, ILI9341_YELLOW, BLUE2BLUE);
-    // fillScreen(ili9341_t.device, ILI9341_GREENYELLOW);
-    // drawRect(ili9341_t.device, 160, 55, 80 + 160, 100, ILI9341_GREENYELLOW);
-    // drawRect(ili9341_t.device, 160, 155, 80 + 160, 205, ILI9341_GREENYELLOW);
-
-    // drawText(ili9341_t.device, "CPU 50%", 180, 50, ILI9341_WHITE, 4, ILI9341_GREENYELLOW);
     lcdFillRoundRect(ili9341_t.device, 80, 180, 100, 50, 5, GREEN_D);
     lcdFillRoundRect(ili9341_t.device, 205, 180, 100, 50, 5, GREEN_D);
     LCD_Font(ili9341_t.device, 90, 210, "LED ON", _Open_Sans_Bold_20, 1, WHITE);
