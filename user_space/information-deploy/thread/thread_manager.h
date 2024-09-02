@@ -42,15 +42,6 @@ typedef uint16_t colour_t;
 #define GREEN_D					    ((colour_t)0x0400)
 
 
-
-
-
-
-
-
-
-
-
 typedef enum {
     READ, READING,
     DREW, DRAWING,

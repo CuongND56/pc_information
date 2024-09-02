@@ -4,15 +4,90 @@
 #define DEV_FILE    "/dev/ili9341_device"
 #define STR_MAX     100
 
-#define RING_METER  "RING_METER"
+#define RING_METER                  "RING_METER"
+#define STRING_BOUNDED_OF_REACT     "STRING_BOUNDED_OF_REACT"
+#define CLEAR_SCREEN			    "CLEAR_SCREEN"
+#define DRAW_STRING			        "DRAW_STRING"
 
 static long map(long x, long in_min, long in_max, long out_min, long out_max);
 static int ringMeter1(int fd, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme);
 static int open_device_file();
 static uint16_t rainbow(uint16_t value);
+static void draw_string(int fd, char *str, int x, int y, int color);
+
+static uint16_t rainbow(uint16_t value) {
+
+	// Value is expected to be in range 0-127
+	// The value is converted to a spectrum colour from 0 = blue through to 127 = red
+
+	uint16_t red = 0; // Red is the top 5 bits of a 16 bit colour value
+	uint16_t green = 0;// Green is the middle 6 bits
+	uint16_t blue = 0; // Blue is the bottom 5 bits
+
+	uint16_t quadrant = value / 32;
+
+	switch (quadrant) {
+
+		case 0:
+			blue = 31;
+			green = 2 * (value % 32);
+			red = 0;
+			break;
+
+		case 1:
+			blue = 31 - (value % 32);
+			green = 63;
+			red = 0;
+			break;
+		
+		case 2:
+			blue = 0;
+			green = 63;
+			red = value % 32;
+			break;
+		
+		case 3:
+			blue = 0;
+			green = 63 - 2 * (value % 32);
+			red = 31;
+			break;
+		
+		default:
+			break;
+
+	}
+
+	return (red << 11) + (green << 5) + blue;
+}
 
 static long map(long x, long in_min, long in_max, long out_min, long out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+static int open_device_file() {
+    int fd = open(DEV_FILE, O_WRONLY);
+    if (fd == -1) {
+        printf("Open device file failed. Please check the dev folder\n");
+        exit(EXIT_FAILURE);
+    }
+    return fd;
+}
+
+//{command,string,x,y,color}
+static void draw_string_bounded_react(int fd, char *str, int x, int y, int color) {
+
+	char message[STR_MAX] = {0};
+
+	sprintf(message, "%s,%s,%d,%d,%d", STRING_BOUNDED_OF_REACT, str, x, y, color);
+	write(fd, message, strlen(message));
+}
+
+static void draw_string(int fd, char *str, int x, int y, int color) {
+
+	char message[STR_MAX] = {0};
+
+	sprintf(message, "%s,%s,%d,%d,%d", DRAW_STRING, str, x, y, color);
+	write(fd, message, strlen(message));
 }
 
 static int ringMeter1(int fd, int value, int vmin, int vmax, int x, int y, int r, int w, uint16_t bcolor, uint16_t scheme) {
@@ -112,70 +187,21 @@ static int ringMeter1(int fd, int value, int vmin, int vmax, int x, int y, int r
 	return x + r;
 }
 
-static uint16_t rainbow(uint16_t value) {
-
-	// Value is expected to be in range 0-127
-	// The value is converted to a spectrum colour from 0 = blue through to 127 = red
-
-	uint16_t red = 0; // Red is the top 5 bits of a 16 bit colour value
-	uint16_t green = 0;// Green is the middle 6 bits
-	uint16_t blue = 0; // Blue is the bottom 5 bits
-
-	uint16_t quadrant = value / 32;
-
-	switch (quadrant) {
-
-		case 0:
-			blue = 31;
-			green = 2 * (value % 32);
-			red = 0;
-			break;
-
-		case 1:
-			blue = 31 - (value % 32);
-			green = 63;
-			red = 0;
-			break;
-		
-		case 2:
-			blue = 0;
-			green = 63;
-			red = value % 32;
-			break;
-		
-		case 3:
-			blue = 0;
-			green = 63 - 2 * (value % 32);
-			red = 31;
-			break;
-		
-		default:
-			break;
-
-	}
-
-	return (red << 11) + (green << 5) + blue;
-}
-
-static int open_device_file() {
-    int fd = open(DEV_FILE, O_WRONLY);
-    if (fd == -1) {
-        printf("Open device file failed. Please check the dev folder\n");
-        exit(EXIT_FAILURE);
-    }
-    return fd;
-}
-
-
 void *thread_display(void *args) {
 
     int status, fd;
     struct Data mData = {0};
     struct Thread_worker *mWorker = (struct Thread_worker *)args;
+	char percentage[5] = {0};
 
     fd = open_device_file();
     ringMeter1(fd, 500, 0, 1020, 30, 20, 50, 10, 0xFFE0, 0);
     ringMeter1(fd, 750, 0, 1020, 30, 130, 50, 10, YELLOW, 2);
+
+	// draw_string_bounded_react(fd, "CPU", 155, 72, WHITE);   // y + height
+	// draw_string_bounded_react(fd, "MEMORY", 155, 182, WHITE);
+	draw_string(fd, "CPU : ", 155, 72, BLACK);   // y + height
+	draw_string(fd, "MEMORY : ", 155, 182, BLACK);
 
     while (1) {
         
@@ -197,7 +223,16 @@ void *thread_display(void *args) {
 
         pthread_mutex_unlock(&(mWorker->mManager->lock));
 
+		if (percentage[0] != '\0') {
+			draw_string(fd, percentage, 225, 72, WHITE);
+		}
 
+		memset(percentage, 0, sizeof(percentage));
+		sprintf(percentage, "%d %%", mData.cpu_stat.cpu[0].percentage);
+
+		printf("%s: percentage: %s\n", mWorker->TAG, percentage);
+
+		draw_string(fd, percentage, 225, 72, BLACK);
 
         // display 
     }

@@ -16,6 +16,8 @@ struct cpu_struct_t {
     unsigned long long int steal;           /* Total time spent in other Operating Systems when running in a virtualized environment */
     unsigned long long int guest;           /* Total time spent running a virtual CPU for guest Operating Systems */
     unsigned long long int guest_nice;      /* Total time spent running a niced guest operating system */
+
+    uint8_t percentage;
 };
 
 
