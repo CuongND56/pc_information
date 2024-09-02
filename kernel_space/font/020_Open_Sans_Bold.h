@@ -101,6 +101,7 @@ const uint8_t Open_Sans_Bold_20Bitmaps[] = {
 	0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE, // '|'
 	0xE0,0xF0,0x70,0x30,0x30,0x30,0x30,0x3E,0x0E,0x3E,0x30,0x30,0x30,0x30,0x70,0xF0,0xE0 // '}'
 };
+
 const GFXglyph Open_Sans_Bold_20Glyphs[] = {
 // bitmapOffset, width, height, xAdvance, xOffset, yOffset
 	  {     0,   1,   1,   6,    0,    0 }, // ' '
@@ -198,8 +199,11 @@ const GFXglyph Open_Sans_Bold_20Glyphs[] = {
 	  {  1578,   4,  20,  12,    4,  -15 }, // '|'
 	  {  1588,   8,  17,   9,    1,  -14 } // '}'
 };
-const GFXfont Open_Sans_Bold_20 = {
-(uint8_t  *)Open_Sans_Bold_20Bitmaps,(GFXglyph *)Open_Sans_Bold_20Glyphs,0x20, 0x7E, 28};
+
+const GFXfont 
+Open_Sans_Bold_20 = {(uint8_t *)Open_Sans_Bold_20Bitmaps,
+					 (GFXglyph *)Open_Sans_Bold_20Glyphs,
+					 0x20, 0x7E, 28};
 
 
 #endif /* __020_OPEN_SANS_BOLD_H_ */

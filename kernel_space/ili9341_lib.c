@@ -94,6 +94,8 @@ int ili9341_init(struct ili9341_device *dev_data) {
 
 	lcdSetOrientation(dev_data, ORIENTATION_LANDSCAPE);
 
+	fillScreen(dev_data, ILI9341_WHITE);
+
     return status;
 }
 
@@ -436,8 +438,9 @@ void LCD_Font(struct ili9341_device *dev_data, uint16_t x, uint16_t y, const cha
 	int16_t cursor_y = y;
 	uint16_t text_pos;
 	GFXfont font;
+
 	memcpy(&font, p_font, sizeof(GFXfont));
-	for (text_pos = 0; text_pos < strlen(text); text_pos++) {
+	for (text_pos = 0; text_pos < strlen(text); text_pos ++) {
 		char c = text[text_pos];
 		if (c == '\n') {
 			cursor_x = x;
@@ -460,9 +463,9 @@ void LCD_Char(struct ili9341_device *dev_data, int16_t x, int16_t y, const GFXgl
 	uint16_t set_pixels = 0;
 	uint8_t  cur_x, cur_y;
 
-	for (cur_y = 0; cur_y < glyph -> height; cur_y++) {
+	for (cur_y = 0; cur_y < glyph->height; cur_y++) {
 
-		for (cur_x = 0; cur_x < glyph -> width; cur_x++) {
+		for (cur_x = 0; cur_x < glyph->width; cur_x++) {
 
 			if (bit == 0) {
 				bits = (*(const unsigned char *)(&bitmap[bo++]));
@@ -471,13 +474,13 @@ void LCD_Char(struct ili9341_device *dev_data, int16_t x, int16_t y, const GFXgl
 
 			if (bits & bit) set_pixels++;
 			else if (set_pixels > 0) {
-				lcdFillRect(dev_data, x + (glyph -> xOffset + cur_x - set_pixels) * size, y + (glyph -> yOffset + cur_y) * size, size * set_pixels, size, color24);
+				lcdFillRect(dev_data, x + (glyph->xOffset + cur_x - set_pixels) * size, y + (glyph->yOffset + cur_y) * size, size * set_pixels, size, color24);
 				set_pixels = 0;
 			}
 			bit >>= 1;
 		}
 		if (set_pixels > 0) { 
-			lcdFillRect(dev_data, x + (glyph -> xOffset + cur_x-set_pixels) * size, y + (glyph -> yOffset + cur_y) * size, size * set_pixels, size, color24);
+			lcdFillRect(dev_data, x + (glyph->xOffset + cur_x - set_pixels) * size, y + (glyph->yOffset + cur_y) * size, size * set_pixels, size, color24);
 			set_pixels = 0;
 		}
 	}
@@ -534,5 +537,4 @@ void lcdFillCircleHelper(struct ili9341_device *dev_data, int16_t x0, int16_t y0
 		}
 	}
 }
-
 

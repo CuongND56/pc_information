@@ -1,7 +1,5 @@
 #include "ili9341_lib.h"
 
-#include "font/024_Open_Sans_Bold.h"
-#include "font/020_Open_Sans_Bold.h"
 #include "parser_handle.h"
 
 #define AUTHOR      "cuongnd56 ngoduycuong0506@gmail.com"
@@ -19,9 +17,6 @@ static ssize_t m_read(struct file *mf, char __user *user_buffer, size_t length, 
 static ssize_t m_write(struct file *mf, const char __user *user_buffer, size_t length, loff_t *offset);
 static int m_open(struct inode *mInode, struct file *mf);
 static int m_release(struct inode *mInode, struct file *mf);
-
-#define _Open_Sans_Bold_24      &Open_Sans_Bold_24
-#define _Open_Sans_Bold_20      &Open_Sans_Bold_20
 
 
 char kernel_buff[50];
@@ -147,11 +142,11 @@ static int ili9341_probe(struct spi_device *client) {
 
     ili9341_init(ili9341_t.device);
 
-    lcdFillRoundRect(ili9341_t.device, 80, 180, 100, 50, 5, GREEN_D);
-    lcdFillRoundRect(ili9341_t.device, 205, 180, 100, 50, 5, GREEN_D);
-    LCD_Font(ili9341_t.device, 90, 210, "LED ON", _Open_Sans_Bold_20, 1, WHITE);
-    LCD_Font(ili9341_t.device, 210, 210, "LED OFF", _Open_Sans_Bold_20, 1, WHITE);
-    pr_info("Initialize: ili9341 init 3\n"); 
+    // lcdFillRoundRect(ili9341_t.device, 80, 180, 100, 50, 5, GREEN_D);
+    // lcdFillRoundRect(ili9341_t.device, 205, 180, 100, 50, 5, GREEN_D);
+    // LCD_Font(ili9341_t.device, 90, 210, "LED ON", _Open_Sans_Bold_20, 1, WHITE);
+    // LCD_Font(ili9341_t.device, 210, 210, "LED OFF", _Open_Sans_Bold_20, 1, WHITE);
+    // pr_info("Initialize: ili9341 init 3\n"); 
     
     return 0;
 }
@@ -178,10 +173,10 @@ static ssize_t m_read (struct file *mf, char __user *user_buffer, size_t length,
 static ssize_t m_write (struct file *mf, const char __user *user_buffer, size_t length, loff_t *offset) {
 
     int status;
-    char command[50] = {0};
-    uint16_t x0, y0, x1, y1, x2, y2, color;
+    // char command[50] = {0};
+    // uint16_t x0, y0, x1, y1, x2, y2, color;
 
-    pr_info("Write system call\n");
+    // pr_info("Write system call\n");
     
     /* Copy the buffer from user */
     status = copy_from_user(kernel_buff, user_buffer, length);
