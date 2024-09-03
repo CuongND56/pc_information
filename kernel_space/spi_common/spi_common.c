@@ -5,7 +5,7 @@ void spi_common_select(struct spi_common *spi_dev) {
 }
 
 void spi_common_unselect(struct spi_common *spi_dev) {
-	gpiod_set_value(spi_dev->cs_gpio, HIGH);
+	// gpiod_set_value(spi_dev->cs_gpio, HIGH);
 }
 
 int spi_common_send_command(struct spi_common *spi_dev, u8 *buff, size_t len) {

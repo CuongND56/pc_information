@@ -63,6 +63,7 @@ static struct file_operations fops = {
 
 static int __init initialize(void) {
 
+    pr_info("%s: Hello cuong\n", __func__);
     if (alloc_chrdev_region(&ili9341_t.dev_num, 0, 1, "ili9341-cdev")) {
         pr_err("ERROR: Can not make a number device\n");
         return -1;
